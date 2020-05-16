@@ -31,44 +31,51 @@ yac::Extractor::TreeNode::~TreeNode() {
 	}
 }
 
-void yac::Extractor::extract(std::ifstream & in, std::ofstream & out) {
+void yac::Extractor::extract(ByteSource & in, std::ofstream & out) {
 	m_readHeader(in);
 	m_decode(in, out);
 }
 
-void yac::Extractor::m_checkFile(std::ifstream & in) {
-	if (!in.good()) {
-		throw std::runtime_error("Error while reading file");
-	}
+void yac::Extractor::m_fail() {
+	throw std::runtime_error("Error while reading file");
 }
 
-void yac::Extractor::m_readHeader(std::ifstream & in) {
+void yac::Extractor::m_readHeader(ByteSource & in) {
+	Byte buffer[8];
+	if (in.getBytes(buffer, 8) < 8) {
+		m_fail();
+	}
 	m_fileSize = 0;
 	for (int i = 0; i < 8; ++i) {
-		m_fileSize += (((unsigned long long) in.get()) << (8 * i));
+		m_fileSize += (((unsigned long long) buffer[i]) << (8 * i));
 	}
-	m_checkFile(in);
 	m_tree = m_readNode(in);
 }
 
-yac::Extractor::TreeNode * yac::Extractor::m_readNode(std::ifstream & in) {
-	bool isLeaf = in.get();
-	m_checkFile(in);
+yac::Extractor::TreeNode * yac::Extractor::m_readNode(ByteSource & in) {
+	bool isLeaf;
+	if (in.getBytes(reinterpret_cast<Byte *>(&isLeaf), 1) < 1) {
+		m_fail();
+	}
 	if (isLeaf) {
-		Byte c = in.get();
-		m_checkFile(in);
-		return new TreeNode(c);
+		Byte c;
+		if (in.getBytes(&c, 1)) {
+			return new TreeNode(c);
+		} else {
+			m_fail();
+		}
 	}
 	return new TreeNode(m_readNode(in), m_readNode(in));
 }
 
-void yac::Extractor::m_decode(std::ifstream & in, std::ofstream & out) {
+void yac::Extractor::m_decode(ByteSource & in, std::ofstream & out) {
 	if (m_tree->m_isLeaf) {
 		for (unsigned long long i = 0; i < m_fileSize; ++i) {
 			out.put(m_tree->m_value);
 		}
 		return;
 	}
+
 	Byte buf;
 	int used = 8;
 	for (unsigned long long i = 0; i < m_fileSize; ++i) {
@@ -76,8 +83,9 @@ void yac::Extractor::m_decode(std::ifstream & in, std::ofstream & out) {
 		while (!node->m_isLeaf) {
 			if (used == 8) {
 				used = 0;
-				buf = in.get();
-				m_checkFile(in);
+				if (in.getBytes(&buf, 1) < 1) {
+					m_fail();
+				}
 			}
 			if (buf & (1 << (7 - used++))) {
 				node = node->m_right;

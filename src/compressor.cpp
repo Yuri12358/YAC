@@ -2,6 +2,7 @@
 #include<functional>
 #include<set>
 #include<cstdio>
+#include<iostream>
 
 yac::Compressor::TreeNode::TreeNode()
 	: m_freq(0)
@@ -101,9 +102,11 @@ void yac::Compressor::m_visitNode(const TreeNode * node, BitCode & buffer) {
 }
 
 void yac::Compressor::m_writeHeader(std::ofstream & out) {
+	// endianness-independent write
+	auto fileSize = m_fileSize;
 	for (int i = 0; i < 8; ++i) {
-		out.put(m_fileSize & 0xff);
-		m_fileSize >>= 8;
+		out.put(fileSize & 0xff);
+		fileSize >>= 8;
 	}
 	m_printNode(m_tree, out);
 	delete m_tree;
@@ -125,6 +128,10 @@ void yac::Compressor::m_encode(std::ifstream & in, std::ofstream & out) {
 	Byte c = in.get();
 	Byte buf = 0;
 	int used = 0;
+	long long totalBytes = 0;
+	int prevProgressPercentage = 0;
+	std::cout << "0%";
+	bool errorIsPrinted = false;
 	while (in.good()) {
 		for (bool b : m_codes[c]) {
 			if (used == 8) {
@@ -134,8 +141,21 @@ void yac::Compressor::m_encode(std::ifstream & in, std::ofstream & out) {
 			}
 			buf |= (b << (7 - used++));
 		}
+		++totalBytes;
+		if (m_fileSize > 0) {
+			const int progressPercentage = static_cast<int>(totalBytes * 100 / m_fileSize);
+			if (progressPercentage != prevProgressPercentage) {
+				prevProgressPercentage = progressPercentage;
+				std::cout << "\r" << progressPercentage << "%        ";
+				std::cout.flush();
+			}
+		} else if (not errorIsPrinted) {
+			errorIsPrinted = true;
+			std::cout << "\rinternal error: filesize is 0";
+		}
 		c = in.get();
 	}
+	std::cout << '\n';
 	if (used) {
 		out.put(buf);
 	}

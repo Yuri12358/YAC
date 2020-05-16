@@ -3,12 +3,13 @@
 
 #include<fstream>
 #include<vector>
+#include<cstddef>
 
 namespace yac {
 	class Compressor {
-		typedef unsigned char Byte;
-		typedef unsigned long long FreqType;
-		typedef std::vector<bool> BitCode;
+		using FreqType = unsigned long long;
+		using BitCode = std::vector<bool>;
+		using Byte = unsigned char;
 
 		struct TreeNode {
 			bool m_isLeaf;

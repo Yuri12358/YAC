@@ -1,6 +1,7 @@
 #ifndef YAC_EXTRACTOR_HPP
 #define YAC_EXTRACTOR_HPP
 
+#include<YAC/byte_source.hpp>
 #include<fstream>
 
 namespace yac {
@@ -22,12 +23,12 @@ namespace yac {
 		unsigned long long m_fileSize;
 		TreeNode * m_tree;
 
-		void m_checkFile(std::ifstream & in);
-		void m_readHeader(std::ifstream & in);
-		TreeNode * m_readNode(std::ifstream & in);
-		void m_decode(std::ifstream & in, std::ofstream & out);
+		void m_fail();
+		void m_readHeader(ByteSource & in);
+		TreeNode * m_readNode(ByteSource & in);
+		void m_decode(ByteSource & in, std::ofstream & out);
 	public:
-		void extract(std::ifstream & in, std::ofstream & out);
+		void extract(ByteSource & in, std::ofstream & out);
 	};
 }
 
