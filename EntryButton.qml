@@ -1,6 +1,4 @@
-import QtQuick 2.12
-import QtQuick.Controls 1.4 as QQC1
-import QtQuick.Controls 2.12 as QQC2
+import QtQuick 2.11
 import QtQuick.Controls.Styles 1.4
 
 BasicButton {
