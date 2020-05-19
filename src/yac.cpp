@@ -1,6 +1,8 @@
 #include<YAC/yac.hpp>
 #include<YAC/istream_byte_source.hpp>
 #include<YAC/ostream_byte_sink.hpp>
+#include<YAC/block_sequence_byte_sink.hpp>
+#include<YAC/block_sequence_byte_source.hpp>
 #include<fstream>
 #include<stdexcept>
 #include<cstdio>
@@ -11,13 +13,14 @@ using namespace std::literals;
 yac::Yac::Yac(int argc, const char ** argv) {
 	auto filename = m_processArgs(argc, argv);
 	try {
-		IStreamByteSource in(m_iFile);
-		OStreamByteSink out(m_oFile);
+		m_openFiles(filename);
 		if (m_op == Operation::Compress) {
-			m_openFiles(filename);
+			IStreamByteSource in(m_iFile);
+			BlockSequenceByteSink out(m_oFile);
 			m_compressor.compress(in, out);
 		} else if (m_op == Operation::Extract) {
-			m_openFiles(filename);
+			BlockSequenceByteSource in(m_iFile);
+			OStreamByteSink out(m_oFile);
 			m_extractor.extract(in, out);
 		}
 	} catch (const std::runtime_error & e) {
@@ -69,4 +72,3 @@ void yac::Yac::m_openFiles(const std::string & filename) {
 	m_oFile.open(oFileName, std::ofstream::out
 		| std::ofstream::trunc | std::ofstream::binary);
 }
-

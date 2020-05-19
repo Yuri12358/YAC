@@ -21,8 +21,8 @@ namespace yac {
 			~TreeNode();
 		};
 
-		unsigned long long m_fileSize;
-		TreeNode * m_tree;
+		unsigned long long m_fileSize = 0;
+		TreeNode * m_tree = nullptr;
 
 		void m_fail(std::string_view error);
 		void m_readHeader(ByteSource & in);

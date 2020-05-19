@@ -34,7 +34,7 @@ namespace yac {
 		// write down the block size
 		for (unsigned i = 0; i < sizeof(m_totalBytesWritten); ++i) {
 			const auto byte = static_cast<unsigned char>(m_totalBytesWritten & 0xff);
-			m_stream.write(reinterpret_cast<const char *>(byte), 1);
+			m_stream.write(reinterpret_cast<const char *>(&byte), 1);
 			m_totalBytesWritten >>= 8;
 		}
 

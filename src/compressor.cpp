@@ -153,6 +153,7 @@ void yac::Compressor::m_encode(ByteSource & in, ByteSink & out) {
 		out.putBytes(&writeBuffer, 1);
 		++totalWrites;
 	}
+	out.finish();
 	std::cout << "Total encoded bytes written: " << totalWrites << '\n';
 }
 

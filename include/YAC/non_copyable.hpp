@@ -5,7 +5,7 @@ namespace yac {
 	class NonCopyable {
 	public:
 		constexpr NonCopyable() noexcept = default;
-		constexpr ~NonCopyable() noexcept = default;
+		~NonCopyable() noexcept = default;
 		constexpr NonCopyable(const NonCopyable &) noexcept = delete;
 		constexpr NonCopyable(NonCopyable &&) noexcept = default;
 		constexpr NonCopyable & operator =(const NonCopyable &) noexcept = delete;

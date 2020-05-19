@@ -16,7 +16,7 @@ namespace yac {
 
 		yac::Compressor m_compressor;
 		yac::Extractor m_extractor;
-		Operation m_op;
+		Operation m_op = Operation::None;
 
 		std::ifstream m_iFile;
 		std::ofstream m_oFile;
@@ -24,6 +24,7 @@ namespace yac {
 		std::string m_processArgs(int argc, const char ** argv);
 		void m_printUsage(const std::string & progName);
 		void m_openFiles(const std::string & filename);
+
 	public:
 		Yac(int argc, const char ** argv);
 	};

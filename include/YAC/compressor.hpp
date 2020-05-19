@@ -30,9 +30,9 @@ namespace yac {
 			~TreeNode();
 		};
 
-		unsigned long long m_fileSize;
-		FreqType m_frequency[256];
-		TreeNode * m_tree;
+		unsigned long long m_fileSize = 0;
+		FreqType m_frequency[256]{};
+		TreeNode * m_tree = nullptr;
 		BitCode m_codes[256];
 
 		void m_calculateFrequency(ByteSource & in);

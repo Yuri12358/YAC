@@ -86,6 +86,7 @@ void yac::Extractor::m_decode(ByteSource & in, ByteSink & out) {
 				m_fail("failed to write extracted data");
 			}
 		}
+		out.finish();
 		return;
 	}
 
@@ -114,5 +115,6 @@ void yac::Extractor::m_decode(ByteSource & in, ByteSink & out) {
 			m_fail("failed to write some decoded data");
 		};
 	}
+	out.finish();
 }
 
