@@ -1,0 +1,34 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="qmldir">qmldir</file>
+        <file alias="Constants.qml">Constants.qml</file>
+        <file alias="BasicButton.qml">BasicButton.qml</file>
+        <file alias="main.qml">main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>BasicPopupMenu.qml</file>
+        <file>BasicFileDialog.qml</file>
+        <file>FolderDialog.qml</file>
+        <file>MultifileDialog.qml</file>
+        <file>YacOnlyFileDialog.qml</file>
+        <file>OkCancelDialog.qml</file>
+        <file>AddToArchiveDialog.qml</file>
+        <file>Funcs.js</file>
+        <file>BasicRadioButton.qml</file>
+        <file>EntryButton.qml</file>
+        <file>EntryInfoDialog.qml</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file alias="file.svg">icons/file.svg</file>
+        <file alias="folder.svg">icons/folder.svg</file>
+        <file alias="add.svg">icons/add.svg</file>
+        <file alias="extract.svg">icons/extract.svg</file>
+        <file alias="concat.svg">icons/concat.svg</file>
+        <file alias="settings.svg">icons/settings.svg</file>
+        <file alias="program_settings.svg">icons/program_settings.svg</file>
+        <file alias="add_disabled.svg">icons/add_disabled.svg</file>
+        <file alias="extract_disabled.svg">icons/extract_disabled.svg</file>
+        <file alias="concat_disabled.svg">icons/concat_disabled.svg</file>
+        <file alias="settings_disabled.svg">icons/settings_disabled.svg</file>
+        <file alias="program_settings_disabled.svg">icons/program_settings_disabled.svg</file>
+    </qresource>
+</RCC>
