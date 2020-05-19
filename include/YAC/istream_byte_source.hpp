@@ -11,6 +11,7 @@ namespace yac {
 	public:
 		IStreamByteSource(std::istream & underlyingStream);
 		int getBytes(Byte * dest, int count) override;
+		void reset() override;
 	};
 }
 

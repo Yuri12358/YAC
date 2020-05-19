@@ -28,21 +28,16 @@ yac::Compressor::TreeNode::TreeNode(TreeNode * a, TreeNode * b)
 	, m_right(b) {
 }
 
-bool yac::Compressor::TreeNode::cmp(const TreeNode * a,
-	const TreeNode * b) {
-	return a->m_freq <= b->m_freq;
+bool yac::Compressor::TreeNode::Comparator::operator()(const TreeNode* left, const TreeNode* right) const noexcept {
+	return left->m_freq < right->m_freq;
 }
 
 yac::Compressor::TreeNode::~TreeNode() {
-	if (m_left) {
-		delete m_left;
-	}
-	if (m_right) {
-		delete m_right;
-	}
+	delete m_left;
+	delete m_right;
 }
 
-void yac::Compressor::compress(std::ifstream & in, std::ofstream & out) {
+void yac::Compressor::compress(ByteSource & in, ByteSink & out) {
 	m_calculateFrequency(in);
 	if (m_fileSize > 0) {
 		m_buildTree();
@@ -52,21 +47,18 @@ void yac::Compressor::compress(std::ifstream & in, std::ofstream & out) {
 	}
 }
 
-void yac::Compressor::m_calculateFrequency(std::ifstream & in) {
+void yac::Compressor::m_calculateFrequency(ByteSource & in) {
 	m_fileSize = 0;
-	Byte c = in.get();
-	while (in.good()) {
+	Byte c;
+	while (in.getBytes(&c, 1) == 1) {
 		++m_fileSize;
 		++m_frequency[c];
-		c = in.get();
 	}
-	in.seekg(0, in.beg);
-	in.clear();
+	in.reset();
 }
 
 void yac::Compressor::m_buildTree() {
-	std::function<decltype(TreeNode::cmp)> cmp = TreeNode::cmp;
-	std::set<TreeNode *, decltype(cmp)> nodes(cmp);
+	std::multiset<TreeNode *, TreeNode::Comparator> nodes;
 	for (int i = 0; i < 256; ++i) {
 		if (m_frequency[i] > 0) {
 			nodes.insert(new TreeNode(i, m_frequency[i]));
@@ -101,45 +93,46 @@ void yac::Compressor::m_visitNode(const TreeNode * node, BitCode & buffer) {
 	buffer.pop_back();
 }
 
-void yac::Compressor::m_writeHeader(std::ofstream & out) {
+void yac::Compressor::m_writeHeader(ByteSink & out) {
 	// endianness-independent write
 	auto fileSize = m_fileSize;
 	for (int i = 0; i < 8; ++i) {
-		out.put(fileSize & 0xff);
+		Byte buffer = fileSize & 0xff;
+		out.putBytes(&buffer, 1);
 		fileSize >>= 8;
 	}
 	m_printNode(m_tree, out);
 	delete m_tree;
 }
 
-void yac::Compressor::m_printNode(const TreeNode * node, std::ofstream & out) {
-	out.put(node->m_isLeaf);
+void yac::Compressor::m_printNode(const TreeNode * node, ByteSink & out) {
+	out.putBytes(reinterpret_cast<const Byte *>(&node->m_isLeaf), 1);
 	if (node->m_isLeaf) {
-		out.put(node->m_value);
+		out.putBytes(&node->m_value, 1);
 	} else {
 		m_printNode(node->m_left, out);
 		m_printNode(node->m_right, out);
 	}
 }
 
-void yac::Compressor::m_encode(std::ifstream & in, std::ofstream & out) {
-	in.clear();
-	in.seekg(0, in.beg);
-	Byte c = in.get();
-	Byte buf = 0;
+void yac::Compressor::m_encode(ByteSource & in, ByteSink & out) {
 	int used = 0;
 	long long totalBytes = 0;
 	int prevProgressPercentage = 0;
 	std::cout << "0%";
 	bool errorIsPrinted = false;
-	while (in.good()) {
-		for (bool b : m_codes[c]) {
+	long long totalWrites = 0;
+	Byte readBuffer;
+	Byte writeBuffer = 0;
+	while (in.getBytes(&readBuffer, 1) == 1) {
+		for (bool b : m_codes[readBuffer]) {
 			if (used == 8) {
-				out.put(buf);
-				buf = 0;
+				out.putBytes(&writeBuffer, 1);
+				++totalWrites;
+				writeBuffer = 0;
 				used = 0;
 			}
-			buf |= (b << (7 - used++));
+			writeBuffer |= (b << (7 - used++));
 		}
 		++totalBytes;
 		if (m_fileSize > 0) {
@@ -153,11 +146,13 @@ void yac::Compressor::m_encode(std::ifstream & in, std::ofstream & out) {
 			errorIsPrinted = true;
 			std::cout << "\rinternal error: filesize is 0";
 		}
-		c = in.get();
 	}
 	std::cout << '\n';
+	std::cout << "Total bytes encoded: " << totalBytes << '\n';
 	if (used) {
-		out.put(buf);
+		out.putBytes(&writeBuffer, 1);
+		++totalWrites;
 	}
+	std::cout << "Total encoded bytes written: " << totalWrites << '\n';
 }
 

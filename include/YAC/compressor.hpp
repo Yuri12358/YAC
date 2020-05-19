@@ -1,6 +1,8 @@
 #ifndef YAC_COMPRESSOR_HPP
 #define YAC_COMPRESSOR_HPP
 
+#include<YAC/byte_sink.hpp>
+#include<YAC/byte_source.hpp>
 #include<fstream>
 #include<vector>
 #include<cstddef>
@@ -12,6 +14,10 @@ namespace yac {
 		using Byte = unsigned char;
 
 		struct TreeNode {
+			struct Comparator {
+				bool operator() (const TreeNode * left, const TreeNode * right) const noexcept;
+			};
+
 			bool m_isLeaf;
 			Byte m_value;
 			FreqType m_freq;
@@ -21,7 +27,6 @@ namespace yac {
 			TreeNode();
 			TreeNode(Byte value, FreqType freq);
 			TreeNode(TreeNode * a, TreeNode * b);
-			static bool cmp(const TreeNode * a, const TreeNode * b);
 			~TreeNode();
 		};
 
@@ -30,16 +35,16 @@ namespace yac {
 		TreeNode * m_tree;
 		BitCode m_codes[256];
 
-		void m_calculateFrequency(std::ifstream & in);
+		void m_calculateFrequency(ByteSource & in);
 		void m_buildTree();
 		void m_generateCodes();
 		void m_visitNode(const TreeNode * node, BitCode & buffer);
-		void m_writeHeader(std::ofstream & out);
-		void m_printNode(const TreeNode * node, std::ofstream & out);
-		void m_encode(std::ifstream & in, std::ofstream & out);
+		void m_writeHeader(ByteSink & out);
+		void m_printNode(const TreeNode * node, ByteSink & out);
+		void m_encode(ByteSource & in, ByteSink & out);
 
 	public:
-		void compress(std::ifstream & in, std::ofstream & out);
+		void compress(ByteSource & in, ByteSink & out);
 	};
 }
 

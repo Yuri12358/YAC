@@ -2,6 +2,7 @@
 #define YAC_EXTRACTOR_HPP
 
 #include<YAC/byte_source.hpp>
+#include<YAC/byte_sink.hpp>
 #include<fstream>
 
 namespace yac {
@@ -23,12 +24,12 @@ namespace yac {
 		unsigned long long m_fileSize;
 		TreeNode * m_tree;
 
-		void m_fail();
+		void m_fail(std::string_view error);
 		void m_readHeader(ByteSource & in);
 		TreeNode * m_readNode(ByteSource & in);
-		void m_decode(ByteSource & in, std::ofstream & out);
+		void m_decode(ByteSource & in, ByteSink & out);
 	public:
-		void extract(ByteSource & in, std::ofstream & out);
+		void extract(ByteSource & in, ByteSink & out);
 	};
 }
 

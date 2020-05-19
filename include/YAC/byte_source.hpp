@@ -8,6 +8,8 @@ namespace yac {
 	public:
 		// returns the count of actually given bytes
 		virtual int getBytes(Byte * dest, int count) = 0;
+		virtual void reset() = 0;
+		virtual ~ByteSource() = default;
 	};
 }
 

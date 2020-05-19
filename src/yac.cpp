@@ -1,5 +1,6 @@
 #include<YAC/yac.hpp>
 #include<YAC/istream_byte_source.hpp>
+#include<YAC/ostream_byte_sink.hpp>
 #include<fstream>
 #include<stdexcept>
 #include<cstdio>
@@ -10,13 +11,14 @@ using namespace std::literals;
 yac::Yac::Yac(int argc, const char ** argv) {
 	auto filename = m_processArgs(argc, argv);
 	try {
+		IStreamByteSource in(m_iFile);
+		OStreamByteSink out(m_oFile);
 		if (m_op == Operation::Compress) {
 			m_openFiles(filename);
-			m_compressor.compress(m_iFile, m_oFile);
+			m_compressor.compress(in, out);
 		} else if (m_op == Operation::Extract) {
 			m_openFiles(filename);
-			IStreamByteSource in(m_iFile);
-			m_extractor.extract(in, m_oFile);
+			m_extractor.extract(in, out);
 		}
 	} catch (const std::runtime_error & e) {
 		printf("Fatal error: %s\n", e.what());
@@ -26,13 +28,13 @@ yac::Yac::Yac(int argc, const char ** argv) {
 std::string yac::Yac::m_processArgs(int argc, const char ** argv) {
 	m_op = Operation::None;
 	if (argc == 3) {
-		std::string_view operationFlag = argv[1];
+		const std::string_view operationFlag = argv[1];
 		if (operationFlag == "-c") {
 			m_op = Operation::Compress;
 			return argv[2];
 		} else if (operationFlag == "-x") {
 			m_op = Operation::Extract;
-			std::string_view filename = argv[2];
+			const std::string_view filename = argv[2];
 			if (filename.size() > 4 and filename.substr(filename.size() - 4) == ".yac") {
 				return std::string{filename.substr(0, filename.size() - 4)};
 			}

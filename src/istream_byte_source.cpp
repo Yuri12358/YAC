@@ -11,5 +11,10 @@ namespace yac {
 
 		return after - before;
 	}
+
+	void IStreamByteSource::reset() {
+		stream.clear();
+		stream.seekg(0);
+	}
 }
 

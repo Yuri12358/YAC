@@ -8,7 +8,7 @@
 
 namespace yac {
 	class Yac {
-		enum Operation {
+		enum class Operation {
 			None,
 			Compress,
 			Extract
