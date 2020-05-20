@@ -155,4 +155,9 @@ void ArchivedFileModel::resetToNothing()
 	}
 }
 
+EntryInfo* ArchivedFileModel::getCurrentEI()
+{
+	return m_currentFolder;
+}
+
 }

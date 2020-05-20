@@ -17,11 +17,33 @@ ApplicationWindow {
 	property var fileInfoDialog: null
 	property var programSettingsDialog: null
 
+	property bool archivationActive: archPB.visible
+
 	property bool showEnhancedFileInfo: false
 	Connections {
 		target: guiInteractor
 		onFireShowEnhancedFileInfo: {
 			showEnhancedFileInfo = show
+		}
+	}
+
+	property bool anyArchiveOpened: false
+	Connections {
+		target: guiInteractor
+		onSetFileTree: {
+			anyArchiveOpened = true
+		}
+	}
+
+	property var errorDialog: null
+	Connections {
+		target: guiInteractor
+		onFireShowErrorDialog: {
+			errorDialog = Funcs.createWindow("qrc:/ErrorDialog.qml", rootWindow)
+			if (errorDialog != null) {
+				errorDialog.errorName = error
+				errorDialog.show()
+			}
 		}
 	}
 
@@ -70,7 +92,8 @@ ApplicationWindow {
             Layout.fillHeight: true
 
            BasicButton {
-                id: addButton
+				id: addButton
+				enabled: !archivationActive
                 iconEnabled: "add.svg"
                 iconDisabled: "add_disabled.svg"
                 toolTipText: qsTr("add")
@@ -81,17 +104,18 @@ ApplicationWindow {
                 Layout.preferredWidth: width
                 Layout.preferredHeight: height
                 Layout.alignment: Qt.AlignCenter
-                onCheckedChanged: {
-                    addToArchiveDialog = Funcs.createWindow("qrc:/AddToArchiveDialog.qml", rootWindow)
-                    if (addToArchiveDialog != null) {
-                        addToArchiveDialog.show()
-                    }
-                }
+				onCheckedChanged: {
+					addToArchiveDialog = Funcs.createWindow("qrc:/AddToArchiveDialog.qml", rootWindow)
+					if (addToArchiveDialog != null) {
+						addToArchiveDialog.show()
+					}
+				}
            }
 
            BasicButton {
                 id: extractButton
-                iconEnabled: "extract.svg"
+				enabled: anyArchiveOpened && !archivationActive
+				iconEnabled: "extract.svg"
                 iconDisabled: "extract_disabled.svg"
                 toolTipText: qsTr("extract")
                 Layout.leftMargin: Constants.ltMarginLR
@@ -108,7 +132,8 @@ ApplicationWindow {
 
            BasicButton {
                 id: concatButton
-                iconEnabled: "concat.svg"
+				enabled: anyArchiveOpened && !archivationActive
+				iconEnabled: "concat.svg"
                 iconDisabled: "concat_disabled.svg"
                 toolTipText: qsTr("concat")
                 Layout.leftMargin: Constants.ltMarginLR
@@ -124,7 +149,8 @@ ApplicationWindow {
            }
 
            BasicButton {
-                id: settingsButton
+				id: settingsButton
+				enabled: anyArchiveOpened && !archivationActive
                 iconEnabled: "settings.svg"
                 iconDisabled: "settings_disabled.svg"
                 toolTipText: qsTr("archive settings")
@@ -177,6 +203,11 @@ ApplicationWindow {
 					id: archPB
 					indeterminate: false
 					Layout.fillWidth: true
+					onVisibleChanged: {
+						if (addToArchiveDialog != null) {
+							addToArchiveDialog.archivationActive = visible
+						}
+					}
 				}
 
 				Button {

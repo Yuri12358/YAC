@@ -18,6 +18,7 @@
         <file>EntryInfoDialog.qml</file>
         <file>ProgramSettingsDialog.qml</file>
         <file>BasicCheckBox.qml</file>
+        <file>ErrorDialog.qml</file>
     </qresource>
     <qresource prefix="/icons">
         <file alias="file.svg">icons/file.svg</file>

@@ -29,6 +29,8 @@ public:
 	Q_SIGNAL void fireShowEnhancedFileInfo(bool show);
 	Q_SIGNAL void fireEnterFolder(QString name);
 	Q_SIGNAL void fireGoBack();
+	// C++ to QML but GUI-only
+	Q_SIGNAL void fireShowErrorDialog(QString error);
 	// C++ to QML
 	Q_SIGNAL void setFileTree(EntryInfo* root); // set initial file tree on archive opening
 	Q_SIGNAL void addEntryToCurrentFolder(EntryInfo* entry); // call when progress dialog for this entry is just hidden
