@@ -21,6 +21,7 @@ public:
 	Q_SIGNAL void fireExtractToFolder(QUrl url);
 	Q_SIGNAL void fireConcatWith(QUrl url);
 	Q_SIGNAL void fireCancelCurrentArchivation();
+	Q_SIGNAL void fireAddFiles(std::vector<EntryInfo*> files);
 	// QML to C++ GUI-only
 	Q_SIGNAL void fireEnterFolder(QString name);
 	Q_SIGNAL void fireGoBack();
@@ -37,8 +38,8 @@ private:
 	Q_SLOT void onSetFileTree(EntryInfo* root);
 	Q_SLOT void onAddEntryToCurrentFolder(EntryInfo* entry);
 	static QString toUserFriendlyFileName(QString name);
-	EntryInfo* formEntry(QUrl url, EntryInfo* parent = nullptr);
-	EntryInfo* formEntry(QString name, EntryInfo* parent = nullptr);
+	EntryInfo* formEntry(QUrl url, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);
+	EntryInfo* formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);
 };
 }
 

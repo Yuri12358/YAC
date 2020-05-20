@@ -155,7 +155,7 @@ ApplicationWindow {
 
 			RowLayout {
 				id: archProgress
-	//			visible: false
+				visible: false
 				Layout.fillWidth: true
 				ProgressBar {
 					id: archPB

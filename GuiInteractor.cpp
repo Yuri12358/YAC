@@ -15,21 +15,23 @@ namespace yac
 		qml->setContextProperty("fileModel", &m_archFileModel);
 	}
 
-	EntryInfo* GuiInteractor::formEntry(QUrl url, struct EntryInfo* parent)
+	EntryInfo* GuiInteractor::formEntry(QUrl url, std::vector<EntryInfo*>& files, EntryInfo* parent)
 	{
-		return formEntry(url.toLocalFile(), parent);
+		return formEntry(url.toLocalFile(), files, parent);
 	}
 
-	EntryInfo* GuiInteractor::formEntry(QString name, EntryInfo* parent)
+	EntryInfo* GuiInteractor::formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent)
 	{
 		QFileInfo info(name);
 		EntryInfo* result = new EntryInfo();
 		result->name = toUserFriendlyFileName(name);
+		result->fullPath = name;
 		result->parent = parent;
 		if (info.isFile())
 		{
 			result->type = EntryType::File;
 			result->sizeUncompressed = info.size();
+			files.push_back(result);
 		}
 		else if (info.isDir())
 		{
@@ -40,7 +42,7 @@ namespace yac
 			{
 				if (child != QString(".") && child != QString(".."))
 				{
-					result->children.push_back(formEntry(name + '/' + child, result));
+					result->children.push_back(formEntry(name + '/' + child, files, result));
 				}
 			}
 		}
@@ -70,10 +72,12 @@ namespace yac
 
 	void GuiInteractor::onFireAddFiles(QList<QUrl> urls)
 	{
+		std::vector<EntryInfo*> files;
 		for (const auto& url : urls)
 		{
-			m_archFileModel.addEntry(formEntry(url));
+			formEntry(url, files);
 		}
+		Q_EMIT fireAddFiles(files);
 	}
 
 	void GuiInteractor::onFireEnterFolder(QString name)
