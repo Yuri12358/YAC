@@ -11,6 +11,7 @@
 using namespace std::literals;
 
 yac::Yac::Yac(int argc, const char ** argv) {
+	/*
 	auto filename = m_processArgs(argc, argv);
 	try {
 		m_openFiles(filename);
@@ -26,6 +27,7 @@ yac::Yac::Yac(int argc, const char ** argv) {
 	} catch (const std::runtime_error & e) {
 		printf("Fatal error: %s\n", e.what());
 	}
+	*/
 }
 
 std::string yac::Yac::m_processArgs(int argc, const char ** argv) {

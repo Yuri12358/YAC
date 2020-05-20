@@ -8,7 +8,9 @@
 #include<cstddef>
 
 namespace yac {
-	class Compressor {
+struct EntryInfo;
+
+class Compressor {
 		using FreqType = unsigned long long;
 		using BitCode = std::vector<bool>;
 		using Byte = unsigned char;
@@ -18,13 +20,13 @@ namespace yac {
 				bool operator() (const TreeNode * left, const TreeNode * right) const noexcept;
 			};
 
-			bool m_isLeaf;
-			Byte m_value;
-			FreqType m_freq;
-			TreeNode * m_left;
-			TreeNode * m_right;
+			bool m_isLeaf = false;
+			Byte m_value{};
+			FreqType m_freq = 0;
+			TreeNode * m_left = nullptr;
+			TreeNode * m_right = nullptr;
 
-			TreeNode();
+			TreeNode() = default;
 			TreeNode(Byte value, FreqType freq);
 			TreeNode(TreeNode * a, TreeNode * b);
 			~TreeNode();
@@ -39,12 +41,17 @@ namespace yac {
 		void m_buildTree();
 		void m_generateCodes();
 		void m_visitNode(const TreeNode * node, BitCode & buffer);
-		void m_writeHeader(ByteSink & out);
+		void m_writeHeader(const EntryInfo & fileInfo, std::ostream & out);
 		void m_printNode(const TreeNode * node, ByteSink & out);
-		void m_encode(ByteSource & in, ByteSink & out);
+		void m_writeCompressedSize(std::ostream & out, std::ostream::pos_type headerStartPos, unsigned long long compressedSize);
+
+		// returns the compressed size (bytes written to out)
+		unsigned long long m_encode(ByteSource & in, ByteSink & out);
+		void m_compress(EntryInfo & fileInfo, ByteSource & in, std::ostream &out);
 
 	public:
-		void compress(ByteSource & in, ByteSink & out);
+		// accepts directories and files
+		void compress(EntryInfo & entry, std::ostream & archive);
 	};
 }
 

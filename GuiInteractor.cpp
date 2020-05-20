@@ -46,10 +46,11 @@ namespace yac
 		m_uaTranslator(new QTranslator(this)),
 		m_qmlEngine(engine)
 	{
-		connect(this, &GuiInteractor::fireAddFilesToArchive, this, &GuiInteractor::onFireAddFiles);
+		connect(this, &GuiInteractor::fireAddFilesToArchive, this, &GuiInteractor::onFireAddFilesToArchive);
 		connect(this, &GuiInteractor::fireEnterFolder, this, &GuiInteractor::onFireEnterFolder);
 		connect(this, &GuiInteractor::fireGoBack, this, &GuiInteractor::onFireGoBack);
 		connect(this, &GuiInteractor::fireNewArchive, this, &GuiInteractor::onFireNewArchive);
+		connect(this, &GuiInteractor::fireAddFiles, this, &GuiInteractor::onFireAddFiles);
 		qml->setContextProperty("guiInteractor", this);
 		qml->setContextProperty("fileModel", m_archFileModel);
 		m_settings.load();
@@ -112,13 +113,21 @@ namespace yac
 		m_archFileModel->addEntry(entry);
 	}
 
-	void GuiInteractor::onFireOpenArchive(QUrl url)
+	void GuiInteractor::onFireAddFiles(std::vector<EntryInfo*> files)
 	{
-		EntryInfo* entry = nullptr/*to be implemented*/;
-		onSetFileTree(entry);
+		std::ofstream archive("heck");
+		for (auto entry : files) {
+			m_compressor.compress(*entry, archive);
+		}
 	}
 
-	void GuiInteractor::onFireAddFiles(QList<QUrl> urls)
+	void GuiInteractor::onFireOpenArchive(QUrl url)
+	{
+		std::ifstream archive(url.path().toStdString());
+		onSetFileTree(m_extractor.extractMetaInfo(archive));
+	}
+
+	void GuiInteractor::onFireAddFilesToArchive(QList<QUrl> urls)
 	{
 		std::vector<EntryInfo*> files;
 		for (const auto& url : urls)

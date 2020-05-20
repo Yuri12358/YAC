@@ -5,11 +5,12 @@ namespace yac {
 	uint64_t BlockSequenceByteSource::m_readBlockSize() {
 		uint64_t blockSize = 0;
 
-		for (unsigned i = 0; i < 8; ++i) {
-			unsigned char buffer;
-			m_stream.read(reinterpret_cast<char *>(&buffer), 1);
+		char buffer[8];
+		m_stream.read(buffer, 8);
+		for (int i = 7; i >= 0; ++i) {
+			const unsigned char byte = buffer[i];
 			blockSize <<= 8;
-			blockSize += buffer;
+			blockSize += byte;
 		}
 
 		return blockSize;
