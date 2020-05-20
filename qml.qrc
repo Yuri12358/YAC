@@ -16,6 +16,8 @@
         <file>BasicRadioButton.qml</file>
         <file>EntryButton.qml</file>
         <file>EntryInfoDialog.qml</file>
+        <file>ProgramSettingsDialog.qml</file>
+        <file>BasicCheckBox.qml</file>
     </qresource>
     <qresource prefix="/icons">
         <file alias="file.svg">icons/file.svg</file>

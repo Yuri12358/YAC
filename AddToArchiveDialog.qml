@@ -25,6 +25,14 @@ Window {
 		}
 	}
 
+	property string newArchName: "unnamed"
+	FolderDialog {
+		id: newArchiveFD
+		onAccepted: {
+			guiInteractor.fireNewArchive(folder, newArchName)
+		}
+	}
+
 	YacOnlyFileDialog {
 		id: openArchFD
 		onAccepted: {
@@ -38,9 +46,11 @@ Window {
         columnSpacing: 10
         rowSpacing: 10
         columns: 2
-        rows: 2
+		rows: 3
 
-        ColumnLayout {
+		ColumnLayout {
+			Layout.row: 0
+			Layout.column: 0
             Layout.alignment: Qt.AlignCenter
             BasicRadioButton {
                 id: rbAddFile
@@ -55,53 +65,81 @@ Window {
 				id: rbOpenArchive
 				text: qsTr("Open archive")
             }
-        }
+			BasicRadioButton {
+				id: rbNewArchive
+				text: qsTr("New archive")
+			}
+		}
 
-        Button {
-            text: qsTr("Open...")
-            width: height * 3
-            height: Constants.flatBtnHeight
-            Layout.preferredWidth: width
-            Layout.alignment: Qt.AlignCenter
-            Layout.row: 0
-            Layout.column: 1
-            checkable: false
-            onClicked: {
-                if (rbAddFile.checked) {
-                    addFileMD.open()
-                }
-				else if (rbAddFolder.checked) {
-                    addFolderFD.open()
+		ColumnLayout {
+
+			Layout.fillWidth: true
+			Layout.row: 0
+			Layout.column: 1
+			TextField {
+				id: newArchTextField
+				Layout.fillWidth: true
+				Layout.margins: 5
+				visible: rbNewArchive.checked
+				//placeholder: qsTr("Enter name")
+				onAccepted: {
+					if (visible) {
+						newArchName = text
+						newArchiveFD.open()
+					}
 				}
-				else {
-					openArchFD.open();
+			}
+
+			Button {
+				text: qsTr("Open...")
+				width: height * 3
+				height: Constants.flatBtnHeight
+				Layout.preferredWidth: width
+				Layout.alignment: Qt.AlignCenter
+				checkable: false
+				onClicked: {
+					if (rbAddFile.checked) {
+						addFileMD.open()
+					}
+					else if (rbAddFolder.checked) {
+						addFolderFD.open()
+					}
+					else if (rbOpenArchive.checked){
+						openArchFD.open()
+					}
+					else {
+						newArchName = newArchTextField.text
+						newArchiveFD.open()
+					}
 				}
-            }
-        }
+			}
+		}
 
         Button {
             text: qsTr("Ok")
             width: height * 3
             height: Constants.flatBtnHeight
             Layout.preferredWidth: width
-            Layout.alignment: Qt.AlignCenter
+			Layout.alignment: Qt.AlignLeft
             Layout.row: 1
-            Layout.column: 0
+				Layout.margins: 5
+			Layout.column: 0
             checkable: false
             onClicked: {
                 rootWnd.close()
             }
-        }
+		}
 
         Button {
             text: qsTr("Cancel")
             width: height * 3
             height: Constants.flatBtnHeight
             Layout.preferredWidth: width
-            Layout.alignment: Qt.AlignCenter
-            Layout.row: 1
+			Layout.alignment: Qt.AlignRight
+			Layout.row: 1
             Layout.column: 1
-            checkable: false
+				Layout.margins: 5
+			checkable: false
             onClicked: {
                 rootWnd.close()
             }

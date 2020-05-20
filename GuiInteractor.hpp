@@ -3,6 +3,7 @@
 
 #include <QQmlContext>
 #include <QQmlEngine>
+#include <QFile>
 #include "ArchivedFileModel.hpp"
 
 namespace yac
@@ -21,8 +22,11 @@ public:
 	Q_SIGNAL void fireExtractToFolder(QUrl url);
 	Q_SIGNAL void fireConcatWith(QUrl url);
 	Q_SIGNAL void fireCancelCurrentArchivation();
+	Q_SIGNAL void fireNewArchiveCreated(QString fullPath);
 	Q_SIGNAL void fireAddFiles(std::vector<EntryInfo*> files);
 	// QML to C++ GUI-only
+	Q_SIGNAL void fireNewArchive(QUrl parentFolder, QString fn);
+	Q_SIGNAL void fireShowEnhancedFileInfo(bool show);
 	Q_SIGNAL void fireEnterFolder(QString name);
 	Q_SIGNAL void fireGoBack();
 	// C++ to QML
@@ -31,6 +35,7 @@ public:
 	Q_SIGNAL void setProgress(float progress);
 
 private:
+	Q_SLOT void onFireNewArchive(QUrl parentFolder, QString fn);
 	Q_SLOT void onFireAddFiles(QList<QUrl> urls);
 	Q_SLOT void onFireOpenArchive(QUrl url);;
 	Q_SLOT void onFireEnterFolder(QString name);

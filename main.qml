@@ -15,6 +15,15 @@ ApplicationWindow {
 
 	property var addToArchiveDialog: null
 	property var fileInfoDialog: null
+	property var programSettingsDialog: null
+
+	property bool showEnhancedFileInfo: false
+	Connections {
+		target: guiInteractor
+		onFireShowEnhancedFileInfo: {
+			showEnhancedFileInfo = show
+		}
+	}
 
 	Menu {
 		id: filePopup
@@ -51,7 +60,7 @@ ApplicationWindow {
 
     YacOnlyFileDialog {
         id: concatFD
-    }
+	}
 
     RowLayout {
             anchors.fill: parent
@@ -143,7 +152,14 @@ ApplicationWindow {
                 Layout.bottomMargin: Constants.ltMarginUD
                 Layout.preferredWidth: width
                 Layout.preferredHeight: height
-                Layout.alignment: Qt.AlignCenter
+				Layout.alignment: Qt.AlignCenter
+				onClicked: {
+					programSettingsDialog = Funcs.createWindow("qrc:/ProgramSettingsDialog.qml", rootWindow)
+					if (programSettingsDialog != null) {
+						programSettingsDialog.showEnhancedFileInfo = showEnhancedFileInfo
+						programSettingsDialog.show()
+					}
+				}
            }
 		}
 
@@ -226,11 +242,22 @@ ApplicationWindow {
 					entryType: model.type
 					entrySizeC: model.sizeComp
 					entrySizeUC: model.sizeUncomp
+					showEnhancedText: model.type === 0 ? showEnhancedFileInfo : false
 					onDoubleClicked: {
 						if (entryType === 1) {
 							guiInteractor.fireEnterFolder(entryName)
 						}
 					}
+
+					Connections {
+						target: guiInteractor
+						onFireShowEnhancedFileInfo: {
+							if (entryBtn.entryType === 0) {
+								entryBtn.showEnhancedText = show
+							}
+						}
+					}
+
 					MouseArea {
 						id: rightButtonHandler
 						anchors.fill: parent
