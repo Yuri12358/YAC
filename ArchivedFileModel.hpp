@@ -26,6 +26,7 @@ namespace yac
 		std::vector<EntryInfo*> children;
         EntryType type;
         QString name;
+		QString fullPath;
 		size_t sizeUncompressed = 0;
 		size_t sizeCompressed = 0;
 		EntryInfo& operator=(EntryInfo) = delete;
