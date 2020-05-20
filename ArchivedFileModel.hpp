@@ -27,8 +27,8 @@ namespace yac
         EntryType type;
         QString name;
 		QString fullPath;
-		size_t sizeUncompressed = 0;
-		size_t sizeCompressed = 0;
+		unsigned long long sizeUncompressed = 0;
+		unsigned long long sizeCompressed = 0;
 		EntryInfo& operator=(EntryInfo) = delete;
 		EntryInfo& operator=(const EntryInfo&) = delete;
 		EntryInfo& operator=(EntryInfo&) = delete;

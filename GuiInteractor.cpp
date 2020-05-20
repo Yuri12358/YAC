@@ -11,6 +11,7 @@ namespace yac
 		connect(this, &GuiInteractor::fireAddFilesToArchive, this, &GuiInteractor::onFireAddFiles);
 		connect(this, &GuiInteractor::fireEnterFolder, this, &GuiInteractor::onFireEnterFolder);
 		connect(this, &GuiInteractor::fireGoBack, this, &GuiInteractor::onFireGoBack);
+		connect(this, &GuiInteractor::fireNewArchive, this, &GuiInteractor::onFireNewArchive);
 		qml->setContextProperty("guiInteractor", this);
 		qml->setContextProperty("fileModel", &m_archFileModel);
 	}
@@ -78,6 +79,18 @@ namespace yac
 			formEntry(url, files);
 		}
 		Q_EMIT fireAddFiles(files);
+	}
+
+	void GuiInteractor::onFireNewArchive(QUrl url, QString fn)
+	{
+		if (fn == "") return;
+		auto path = url.toLocalFile() + '/' + fn + ".yac";
+		QFile file(path);
+		if (file.open(QIODevice::ReadWrite))
+		{
+			file.close();
+			Q_EMIT fireNewArchiveCreated(path);
+		}
 	}
 
 	void GuiInteractor::onFireEnterFolder(QString name)

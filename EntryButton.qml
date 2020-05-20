@@ -6,6 +6,8 @@ BasicButton {
 	height: Constants.entryBtnHeight
 	imgWidth: Constants.entryBtnWidth
 
+	property bool showEnhancedText: false
+
 	property string entryName: ""
 	property int entryType: -1
 	property string entrySizeUC: ""
@@ -14,7 +16,7 @@ BasicButton {
 	Text {
 		anchors.fill: parent
 		leftPadding: imgWidth
-		text: entryName
+		text: showEnhancedText ? "name: " + entryName + "; compressed: " + entrySizeC + "B; uncompressed: " + entrySizeUC + "B" : entryName
 		verticalAlignment: Text.AlignVCenter
 	}
 }
