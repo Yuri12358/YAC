@@ -53,6 +53,8 @@ namespace yac
 		Q_INVOKABLE void stepOut();
         Q_INVOKABLE void clear();
 
+		EntryInfo* getCurrentEI();
+
     private:
         enum class Roles
         {

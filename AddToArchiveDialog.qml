@@ -11,6 +11,16 @@ Window {
 	minimumHeight: 200
 	title: qsTr("Choose what to add or open...")
 
+	property bool anyArchiveOpened: false
+	property bool archivationActive: false
+
+	Connections {
+		target: guiInteractor
+		onSetFileTree: {
+			anyArchiveOpened = true
+		}
+	}
+
     MultifileDialog {
 		id: addFileMD
 		onAccepted: {
@@ -36,7 +46,7 @@ Window {
 	YacOnlyFileDialog {
 		id: openArchFD
 		onAccepted: {
-			guiInteractor.fireAddFilesToArchive([fileUrl])
+			guiInteractor.fireOpenArchive(fileUrl)
 		}
 	}
 
@@ -53,20 +63,24 @@ Window {
 			Layout.column: 0
             Layout.alignment: Qt.AlignCenter
             BasicRadioButton {
-                id: rbAddFile
-                checked: true
+				id: rbAddFile
+				enabled: anyArchiveOpened && !archivationActive
                 text: qsTr("Add file")
             }
 			BasicRadioButton {
 				id: rbAddFolder
+				enabled: anyArchiveOpened && !archivationActive
 				text: qsTr("Add folder")
 			}
 			BasicRadioButton {
 				id: rbOpenArchive
+				enabled: !archivationActive
+				checked: true
 				text: qsTr("Open archive")
             }
 			BasicRadioButton {
 				id: rbNewArchive
+				enabled: !archivationActive
 				text: qsTr("New archive")
 			}
 		}
@@ -83,7 +97,7 @@ Window {
 				visible: rbNewArchive.checked
 				//placeholder: qsTr("Enter name")
 				onAccepted: {
-					if (visible) {
+					if (visible && !archivationActive) {
 						newArchName = text
 						newArchiveFD.open()
 					}
@@ -91,7 +105,8 @@ Window {
 			}
 
 			Button {
-				text: qsTr("Open...")
+				enabled: !archivationActive
+				text: rbNewArchive.checked ? qsTr("Create in...") : qsTr("Open...")
 				width: height * 3
 				height: Constants.flatBtnHeight
 				Layout.preferredWidth: width

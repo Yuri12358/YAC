@@ -18,11 +18,13 @@ namespace yac
 
 	EntryInfo* GuiInteractor::formEntry(QUrl url, std::vector<EntryInfo*>& files, EntryInfo* parent)
 	{
+		if (url.toLocalFile() == "") return nullptr;
 		return formEntry(url.toLocalFile(), files, parent);
 	}
 
 	EntryInfo* GuiInteractor::formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent)
 	{
+		if (name == "") return nullptr;
 		QFileInfo info(name);
 		EntryInfo* result = new EntryInfo();
 		result->name = toUserFriendlyFileName(name);
@@ -76,9 +78,27 @@ namespace yac
 		std::vector<EntryInfo*> files;
 		for (const auto& url : urls)
 		{
-			formEntry(url, files);
+			QString fn = toUserFriendlyFileName(url.toLocalFile());
+			EntryInfo* currentFolder = m_archFileModel.getCurrentEI();
+			bool alreadyExists = false;
+			for (EntryInfo* child : currentFolder->children)
+			{
+				if (fn == child->name)
+				{
+					Q_EMIT fireShowErrorDialog(tr("This file already exists: ") + fn);
+					alreadyExists = true;
+					break;
+				}
+			}
+			if (!alreadyExists)
+			{
+				formEntry(url, files);
+			}
 		}
-		Q_EMIT fireAddFiles(files);
+		if (!files.empty())
+		{
+			Q_EMIT fireAddFiles(files);
+		}
 	}
 
 	void GuiInteractor::onFireNewArchive(QUrl url, QString fn)
