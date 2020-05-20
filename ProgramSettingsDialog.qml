@@ -6,12 +6,10 @@ import QtQuick.Window 2.11
 Window {
 	id: rootWnd
 	width: 300
-	height: 100
+	height: 200
 	minimumWidth: 300
-	minimumHeight: 100
+	minimumHeight: 200
 	title: qsTr("Program options")
-
-	property bool showEnhancedFileInfo: false
 
 	ColumnLayout {
 		anchors.fill: parent
@@ -19,11 +17,35 @@ Window {
 		BasicCheckBox {
 			Layout.fillWidth: true
 			Layout.margins: 5
-			checked: showEnhancedFileInfo
+			checked: guiInteractor.showEnhFileInfo
 			Layout.alignment: Qt.AlignHCenter
 			text: qsTr("Show enhanced file info")
 			onCheckedChanged: {
-				guiInteractor.fireShowEnhancedFileInfo(checked)
+				guiInteractor.showEnhFileInfo = checked
+			}
+		}
+
+		Text {
+			text: qsTr("Interface language: ")
+			Layout.leftMargin: 5
+			Layout.rightMargin: 5
+		}
+
+		ComboBox {
+			Layout.fillWidth: true
+			Layout.leftMargin: 5
+			Layout.rightMargin: 5
+			currentIndex: guiInteractor.language
+			model: ListModel {
+				ListElement {
+					text: qsTr("English")
+				}
+				ListElement {
+					text: qsTr("Ukrainian")
+				}
+			}
+			onCurrentIndexChanged: {
+				guiInteractor.language = currentIndex
 			}
 		}
 

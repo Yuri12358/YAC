@@ -5,6 +5,7 @@
 #include <QQmlEngine>
 #include <QFile>
 #include "ArchivedFileModel.hpp"
+#include <QTranslator>
 
 namespace yac
 {
@@ -12,9 +13,29 @@ class GuiInteractor : public QObject
 {
     Q_OBJECT
 
-    ArchivedFileModel m_archFileModel;
+    ArchivedFileModel* m_archFileModel;
+	QTranslator* m_uaTranslator;
+	QQmlEngine* m_qmlEngine;
+
+	enum class SupportedLanguage
+	{
+		Default = 0, // English
+		Ukrainian,
+		Invalid
+	};
+
+	struct Settings
+	{
+		QString settingsFileName = "config.yacc";
+		bool showEnhancedFileInfo = false;
+		SupportedLanguage language = SupportedLanguage::Default;
+		void load();
+		void store();
+	} m_settings;
+
 public:
-	GuiInteractor(QQmlContext* qml, QObject* parent = Q_NULLPTR);
+	GuiInteractor(QQmlContext* qml, QQmlEngine* engine, QObject* parent = Q_NULLPTR);
+	~GuiInteractor();
 	// QML to C++
     Q_SIGNAL void fireOpenArchive(QUrl url);
 	Q_SIGNAL void fireAddFilesToArchive(QList<QUrl> urls); // add file, files or folder
@@ -35,6 +56,17 @@ public:
 	Q_SIGNAL void setFileTree(EntryInfo* root); // set initial file tree on archive opening
 	Q_SIGNAL void addEntryToCurrentFolder(EntryInfo* entry); // call when progress dialog for this entry is just hidden
 	Q_SIGNAL void setProgress(float progress);
+
+	// translation stuff and other settings
+//	Q_INVOKABLE void selectLang(QString lang);
+	Q_PROPERTY(bool showEnhFileInfo READ getShowEnhFileInfo WRITE setShowEnhFileInfo NOTIFY fireChangeShowEnhFileInfo);
+	Q_PROPERTY(int language READ getLanguage WRITE setLanguage NOTIFY fireChangeLanguage);
+	bool getShowEnhFileInfo();
+	void setShowEnhFileInfo(bool show);
+	int getLanguage();
+	void setLanguage(int lang);
+	Q_SIGNAL void fireChangeShowEnhFileInfo(bool show);
+	Q_SIGNAL void fireChangeLanguage(int lang);
 
 private:
 	Q_SLOT void onFireNewArchive(QUrl parentFolder, QString fn);

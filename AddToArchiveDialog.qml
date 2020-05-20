@@ -50,9 +50,11 @@ Window {
 		}
 	}
 
+	ColumnLayout {
+		anchors.fill: parent
+
     GridLayout {
         id: glRoot
-        anchors.fill: parent
         columnSpacing: 10
         rowSpacing: 10
         columns: 2
@@ -129,35 +131,20 @@ Window {
 				}
 			}
 		}
-
-        Button {
-            text: qsTr("Ok")
-            width: height * 3
-            height: Constants.flatBtnHeight
-            Layout.preferredWidth: width
-			Layout.alignment: Qt.AlignLeft
-            Layout.row: 1
+	}
+		Button {
+			text: qsTr("Finish")
+			width: height * 3
+			height: Constants.flatBtnHeight
+			Layout.preferredWidth: width
+			Layout.alignment: Qt.AlignHCenter
+			Layout.row: 1
 				Layout.margins: 5
 			Layout.column: 0
-            checkable: false
-            onClicked: {
-                rootWnd.close()
-            }
-		}
-
-        Button {
-            text: qsTr("Cancel")
-            width: height * 3
-            height: Constants.flatBtnHeight
-            Layout.preferredWidth: width
-			Layout.alignment: Qt.AlignRight
-			Layout.row: 1
-            Layout.column: 1
-				Layout.margins: 5
 			checkable: false
-            onClicked: {
-                rootWnd.close()
-            }
-        }
-    }
+			onClicked: {
+				rootWnd.close()
+			}
+		}
+	}
 }

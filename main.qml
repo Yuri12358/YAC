@@ -15,17 +15,8 @@ ApplicationWindow {
 
 	property var addToArchiveDialog: null
 	property var fileInfoDialog: null
-	property var programSettingsDialog: null
-
 	property bool archivationActive: archPB.visible
-
-	property bool showEnhancedFileInfo: false
-	Connections {
-		target: guiInteractor
-		onFireShowEnhancedFileInfo: {
-			showEnhancedFileInfo = show
-		}
-	}
+	property var programSettingsDialog: null
 
 	property bool anyArchiveOpened: false
 	Connections {
@@ -182,7 +173,6 @@ ApplicationWindow {
 				onClicked: {
 					programSettingsDialog = Funcs.createWindow("qrc:/ProgramSettingsDialog.qml", rootWindow)
 					if (programSettingsDialog != null) {
-						programSettingsDialog.showEnhancedFileInfo = showEnhancedFileInfo
 						programSettingsDialog.show()
 					}
 				}
@@ -212,8 +202,8 @@ ApplicationWindow {
 
 				Button {
 					text: qsTr("Cancel")
-					width: height * 3
 					height: Constants.flatBtnHeight
+					width: Constants.flatBtnHeight * 3
 					Layout.preferredWidth: width
 					Layout.alignment: Qt.AlignCenter
 					checkable: false
@@ -273,19 +263,10 @@ ApplicationWindow {
 					entryType: model.type
 					entrySizeC: model.sizeComp
 					entrySizeUC: model.sizeUncomp
-					showEnhancedText: model.type === 0 ? showEnhancedFileInfo : false
+					showEnhancedText: model.type === 0 ? guiInteractor.showEnhFileInfo : false
 					onDoubleClicked: {
 						if (entryType === 1) {
 							guiInteractor.fireEnterFolder(entryName)
-						}
-					}
-
-					Connections {
-						target: guiInteractor
-						onFireShowEnhancedFileInfo: {
-							if (entryBtn.entryType === 0) {
-								entryBtn.showEnhancedText = show
-							}
 						}
 					}
 

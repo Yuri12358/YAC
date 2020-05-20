@@ -24,7 +24,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    endif()
 #endif()
 
-find_package(Qt5 COMPONENTS Core Quick REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick LinguistTools REQUIRED)
+set(TS_FILES yac_uk_UA.ts yac_en_US.ts)
 
 if(ANDROID)
     add_library(YACFrontendCMake SHARED
@@ -48,3 +49,5 @@ target_compile_definitions(YACFrontendCMake
   PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 target_link_libraries(YACFrontendCMake
   PRIVATE Qt5::Core Qt5::Quick)
+
+qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
