@@ -21,6 +21,18 @@ Window {
 		}
 	}
 
+	Connections {
+		target: guiInteractor
+		onSetProgress: {
+			if (progress >= 0 && progress <= 1) {
+				archivationActive = true
+			}
+			else {
+				archivationActive = false
+			}
+		}
+	}
+
     MultifileDialog {
 		id: addFileMD
 		onAccepted: {
