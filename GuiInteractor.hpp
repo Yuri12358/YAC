@@ -44,10 +44,7 @@ public:
 	// QML to C++
     Q_SIGNAL void fireOpenArchive(QUrl url);
 	Q_SIGNAL void fireAddFilesToArchive(QList<QUrl> urls); // add file, files or folder
-	Q_SIGNAL void fireRemoveFilesFromArchive(QList<QUrl> url); // remove random mix of files/folders
 	Q_SIGNAL void fireExtractToFolder(QUrl url);
-	Q_SIGNAL void fireConcatWith(QUrl url);
-	Q_SIGNAL void fireCancelCurrentArchivation();
 	Q_SIGNAL void fireNewArchiveCreated(QString fullPath);
 	Q_SIGNAL void fireAddFiles(std::vector<EntryInfo*> files);
 	// QML to C++ GUI-only

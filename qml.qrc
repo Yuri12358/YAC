@@ -19,10 +19,15 @@
         <file>ProgramSettingsDialog.qml</file>
         <file>BasicCheckBox.qml</file>
         <file>ErrorDialog.qml</file>
+        <file>BasicDialogWindow.qml</file>
+        <file>ProjectInfoDialog.qml</file>
     </qresource>
     <qresource prefix="/icons">
         <file alias="file.svg">icons/file.svg</file>
-        <file alias="folder.svg">icons/folder.svg</file>
+		<file alias="yk.png">icons/yk.png</file>
+		<file alias="dt.png">icons/dt.png</file>
+		<file alias="about.svg">icons/about.svg</file>
+		<file alias="folder.svg">icons/folder.svg</file>
         <file alias="add.svg">icons/add.svg</file>
         <file alias="extract.svg">icons/extract.svg</file>
         <file alias="concat.svg">icons/concat.svg</file>

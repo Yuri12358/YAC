@@ -25,23 +25,6 @@ Button {
 	property bool centerHorizontal: true
 	property int marginLeft: 0
 
-	/*style: ButtonStyle {
-        background: Rectangle {
-            implicitWidth: root.width
-            implicitHeight: root.height
-            border.width: 0
-            radius: Constants.controlBtnRadius
-            color: root.enabled ? ((root.hovered ? root.hoverColor : (root.checked ? root.checkedColor : root.standardColor))) : root.disabledColor
-/*            Behavior on color {
-                ColorAnimation {
-                    from:
-                    easing.type: Easing.OutSine
-                    duration: 300
-                }
-            }*/
-		/*}
-	}*/
-
 	background: Rectangle {
 		implicitWidth: root.width
 		implicitHeight: root.height

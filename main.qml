@@ -17,6 +17,7 @@ ApplicationWindow {
 	property var fileInfoDialog: null
 	property bool archivationActive: archPB.visible
 	property var programSettingsDialog: null
+	property var aboutDialog: null
 
 	property bool anyArchiveOpened: false
 	Connections {
@@ -46,13 +47,6 @@ ApplicationWindow {
 		property string sizeUC: "invalid"
 
 		MenuItem {
-			text: qsTr("Remove")
-			onTriggered: {
-				console.log("Rm")
-			}
-		}
-
-		MenuItem {
 			text: qsTr("Info")
 			onTriggered: {
 				fileInfoDialog = Funcs.createWindow("qrc:/EntryInfoDialog.qml", rootWindow)
@@ -74,13 +68,6 @@ ApplicationWindow {
 		}
     }
 
-    YacOnlyFileDialog {
-        id: concatFD
-		onAccepted: {
-			guiInteractor.fireConcatWith(fileUrl)
-		}
-	}
-
     RowLayout {
             anchors.fill: parent
         ColumnLayout {
@@ -93,7 +80,7 @@ ApplicationWindow {
 				enabled: !archivationActive
                 iconEnabled: "add.svg"
                 iconDisabled: "add_disabled.svg"
-                toolTipText: qsTr("add")
+				toolTipText: qsTr("Add")
                 Layout.leftMargin: Constants.ltMarginLR
                 Layout.rightMargin: Constants.ltMarginLR
                 Layout.topMargin: Constants.ltMarginUD
@@ -115,7 +102,7 @@ ApplicationWindow {
 				enabled: anyArchiveOpened && !archivationActive
 				iconEnabled: "extract.svg"
                 iconDisabled: "extract_disabled.svg"
-                toolTipText: qsTr("extract")
+				toolTipText: qsTr("Extract")
                 Layout.leftMargin: Constants.ltMarginLR
                 Layout.rightMargin: Constants.ltMarginLR
                 Layout.topMargin: Constants.ltMarginUD
@@ -128,25 +115,7 @@ ApplicationWindow {
                 }
            }
 
-           BasicButton {
-                id: concatButton
-				enabled: anyArchiveOpened && !archivationActive
-				iconEnabled: "concat.svg"
-                iconDisabled: "concat_disabled.svg"
-                toolTipText: qsTr("concat")
-                Layout.leftMargin: Constants.ltMarginLR
-                Layout.rightMargin: Constants.ltMarginLR
-                Layout.topMargin: Constants.ltMarginUD
-                Layout.bottomMargin: Constants.ltMarginUD
-                Layout.preferredWidth: width
-                Layout.preferredHeight: height
-                Layout.alignment: Qt.AlignCenter
-                onCheckedChanged: {
-                    concatFD.open()
-                }
-           }
-
-           BasicButton {
+		   /*BasicButton {
 				id: settingsButton
 				enabled: anyArchiveOpened && !archivationActive
                 iconEnabled: "settings.svg"
@@ -159,7 +128,7 @@ ApplicationWindow {
                 Layout.preferredWidth: width
                 Layout.preferredHeight: height
                 Layout.alignment: Qt.AlignCenter
-           }
+		   }*/
 
             Item {
                 Layout.fillHeight: true
@@ -183,7 +152,27 @@ ApplicationWindow {
 						programSettingsDialog.show()
 					}
 				}
-           }
+		   }
+
+		   BasicButton {
+				id: aboutButton
+				iconEnabled: "about.svg"
+				toolTipText: qsTr("About")
+				Layout.leftMargin: Constants.ltMarginLR
+				Layout.rightMargin: Constants.ltMarginLR
+				Layout.topMargin: Constants.ltMarginUD
+				Layout.bottomMargin: Constants.ltMarginUD
+				Layout.preferredWidth: width
+				Layout.preferredHeight: height
+				Layout.alignment: Qt.AlignCenter
+				onClicked: {
+					aboutDialog = Funcs.createWindow("qrc:/ProjectInfoDialog.qml", rootWindow)
+					if (aboutDialog != null) {
+						aboutDialog.show()
+					}
+				}
+		   }
+
 		}
 
 		ColumnLayout {
@@ -207,18 +196,6 @@ ApplicationWindow {
 					}
 				}
 
-				Button {
-					text: qsTr("Cancel")
-					height: Constants.flatBtnHeight
-					width: Constants.flatBtnHeight * 3
-					Layout.preferredWidth: width
-					Layout.alignment: Qt.AlignCenter
-					checkable: false
-					onClicked: {
-						archProgress.visible = false
-						guiInteractor.fireCancelCurrentArchivation();
-					}
-				}
 				Connections {
 					target: guiInteractor
 					onSetProgress: {

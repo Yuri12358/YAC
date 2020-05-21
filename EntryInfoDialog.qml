@@ -3,12 +3,12 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.3
 import QtQuick.Window 2.11
 
-Window {
+BasicDialogWindow {
 	id: rootWnd
 	width: 300
-	height: 100
-	minimumWidth: 300
-	minimumHeight: 150
+	height: 150
+	//minimumWidth: 300
+	//minimumHeight: 150
 	title: entryName === "" ? qsTr("File info") : entryName + qsTr(" info")
 
 	property string entryName: ""

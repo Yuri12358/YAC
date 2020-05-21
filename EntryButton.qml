@@ -16,7 +16,7 @@ BasicButton {
 	Text {
 		anchors.fill: parent
 		leftPadding: imgWidth
-		text: showEnhancedText ? "name: " + entryName + "; compressed: " + entrySizeC + "B; uncompressed: " + entrySizeUC + "B" : entryName
+		text: showEnhancedText ? qsTr("name: ") + entryName + qsTr("; compressed: ") + entrySizeC + qsTr("B; uncompressed: ") + entrySizeUC + qsTr("B") : entryName
 		verticalAlignment: Text.AlignVCenter
 	}
 }

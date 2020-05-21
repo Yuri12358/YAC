@@ -31,7 +31,7 @@ include_directories(include)
 #endif()
 
 find_package(Qt5 COMPONENTS Core Quick LinguistTools REQUIRED)
-set(TS_FILES yac_uk_UA.ts yac_en_US.ts)
+set(TS_FILES yac_uk_UA.ts)
 
 if(ANDROID)
     add_library(YACFrontendCMake SHARED

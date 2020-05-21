@@ -9,37 +9,37 @@
         <translation>Оберіть, що відкрити або додати...</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="70"/>
+        <location filename="AddToArchiveDialog.qml" line="82"/>
         <source>Add file</source>
         <translation>Додати файл</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="75"/>
+        <location filename="AddToArchiveDialog.qml" line="87"/>
         <source>Add folder</source>
         <translation>Додати теку</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="81"/>
+        <location filename="AddToArchiveDialog.qml" line="93"/>
         <source>Open archive</source>
         <translation>Відкрити архів</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="86"/>
+        <location filename="AddToArchiveDialog.qml" line="98"/>
         <source>New archive</source>
         <translation>Новий архів</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="111"/>
+        <location filename="AddToArchiveDialog.qml" line="122"/>
         <source>Create in...</source>
         <translation>Створити в...</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="111"/>
+        <location filename="AddToArchiveDialog.qml" line="122"/>
         <source>Open...</source>
         <translation>Відкрити...</translation>
     </message>
     <message>
-        <location filename="AddToArchiveDialog.qml" line="136"/>
+        <location filename="AddToArchiveDialog.qml" line="147"/>
         <source>Finish</source>
         <translation>Закінчити</translation>
     </message>
@@ -50,6 +50,29 @@
     <message>
         <source>Cancel</source>
         <translation type="vanished">Відміна</translation>
+    </message>
+</context>
+<context>
+    <name>EntryButton</name>
+    <message>
+        <location filename="EntryButton.qml" line="19"/>
+        <source>name: </source>
+        <translation>ім&apos;я: </translation>
+    </message>
+    <message>
+        <location filename="EntryButton.qml" line="19"/>
+        <source>; compressed: </source>
+        <translation>; стиснено: </translation>
+    </message>
+    <message>
+        <location filename="EntryButton.qml" line="19"/>
+        <source>B; uncompressed: </source>
+        <translation>Б; не стиснено: </translation>
+    </message>
+    <message>
+        <location filename="EntryButton.qml" line="19"/>
+        <source>B</source>
+        <translation>Б</translation>
     </message>
 </context>
 <context>
@@ -163,6 +186,24 @@
     </message>
 </context>
 <context>
+    <name>ProjectInfoDialog</name>
+    <message>
+        <location filename="ProjectInfoDialog.qml" line="11"/>
+        <source>Project info</source>
+        <translation>Інформація про проект</translation>
+    </message>
+    <message>
+        <location filename="ProjectInfoDialog.qml" line="19"/>
+        <source>Project YAC (yet another compressor)</source>
+        <translation>Проект YAC (черговий стискувач)</translation>
+    </message>
+    <message>
+        <location filename="ProjectInfoDialog.qml" line="26"/>
+        <source>Authors: Danylo Timoshevsky and Yuri Kovalenko</source>
+        <translation>Автори: Данило Тимошевський та Юрій Коваленко</translation>
+    </message>
+</context>
+<context>
     <name>YacOnlyFileDialog</name>
     <message>
         <location filename="YacOnlyFileDialog.qml" line="5"/>
@@ -178,50 +219,59 @@
         <translation>YAC (Черговий стискувач)</translation>
     </message>
     <message>
-        <location filename="main.qml" line="49"/>
-        <source>Remove</source>
-        <translation>Видалити</translation>
+        <location filename="main.qml" line="83"/>
+        <source>Add</source>
+        <translation>Додати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="56"/>
+        <location filename="main.qml" line="105"/>
+        <source>Extract</source>
+        <translation>Розпакувати</translation>
+    </message>
+    <message>
+        <location filename="main.qml" line="160"/>
+        <source>About</source>
+        <translation>Про проект</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="vanished">Видалити</translation>
+    </message>
+    <message>
+        <location filename="main.qml" line="50"/>
         <source>Info</source>
         <translation>Інфо</translation>
     </message>
     <message>
-        <location filename="main.qml" line="90"/>
         <source>add</source>
-        <translation>Додати</translation>
+        <translation type="vanished">Додати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="111"/>
         <source>extract</source>
-        <translation>Розпакувати</translation>
+        <translation type="vanished">Розпакувати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="129"/>
         <source>concat</source>
-        <translation>З&apos;єднати</translation>
+        <translation type="vanished">З&apos;єднати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="147"/>
         <source>archive settings</source>
-        <translation>Параметри архіву</translation>
+        <translation type="vanished">Параметри архіву</translation>
     </message>
     <message>
-        <location filename="main.qml" line="165"/>
+        <location filename="main.qml" line="141"/>
         <source>YAC settings</source>
         <translation>Параметри програми</translation>
     </message>
     <message>
-        <location filename="main.qml" line="204"/>
         <source>Cancel</source>
-        <translation>Відміна</translation>
+        <translation type="vanished">Відміна</translation>
     </message>
 </context>
 <context>
     <name>yac::ArchivedFileModel</name>
     <message>
-        <location filename="ArchivedFileModel.cpp" line="13"/>
+        <location filename="ArchivedFileModel.cpp" line="162"/>
         <source>Root folder</source>
         <translation>Коренева тека</translation>
     </message>
@@ -229,7 +279,7 @@
 <context>
     <name>yac::GuiInteractor</name>
     <message>
-        <location filename="GuiInteractor.cpp" line="133"/>
+        <location filename="GuiInteractor.cpp" line="192"/>
         <source>This file already exists: </source>
         <translation>Цей файл вже існує: </translation>
     </message>
