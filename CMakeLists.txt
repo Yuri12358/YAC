@@ -58,6 +58,8 @@ else()
 		include/YAC/ostream_byte_sink.hpp
 		include/YAC/block_sequence_byte_source.hpp
 		include/YAC/block_sequence_byte_sink.hpp
+		include/YAC/strong_typedef.hpp
+		include/YAC/size_types.hpp
 		src/main.cpp
 		src/yac.cpp
 		src/compressor.cpp

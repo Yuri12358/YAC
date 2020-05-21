@@ -1,6 +1,7 @@
 #ifndef ARCHIVEDFILEMODEL_HPP
 #define ARCHIVEDFILEMODEL_HPP
 
+#include <YAC/size_types.hpp>
 #include <QAbstractListModel>
 #include <vector>
 
@@ -27,9 +28,13 @@ namespace yac
         EntryType type;
         QString name;
 		QString fullPath;
-		unsigned long long sizeUncompressed = 0;
-		unsigned long long sizeCompressed = 0;
-		unsigned long long positionInArchive = 0;
+		UncompressedSize sizeUncompressed{ 0 };
+		CompressedSize sizeCompressed{ 0 };
+		PositionInArchive positionInArchive{ 0 };
+
+		static EntryInfo * newFile(EntryInfo * parent, QString name, UncompressedSize originalSize, CompressedSize compressedSize, PositionInArchive positionInArchive);
+		static EntryInfo * newFolder(EntryInfo * parent, QString name);
+
 		EntryInfo& operator=(EntryInfo) = delete;
 		EntryInfo& operator=(const EntryInfo&) = delete;
 		EntryInfo& operator=(EntryInfo&) = delete;
@@ -55,6 +60,7 @@ namespace yac
         Q_INVOKABLE void clear();
 
 		EntryInfo* getCurrentEI();
+        static EntryInfo* createNewRootFolder();
 
     private:
         enum class Roles
@@ -67,7 +73,7 @@ namespace yac
 
 		void resetToNothing();
 
-		EntryInfo* m_currentFolder;
+		EntryInfo* m_currentFolder; // todo: smart pointers
     };
 }
 

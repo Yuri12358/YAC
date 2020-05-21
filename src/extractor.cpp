@@ -1,11 +1,14 @@
 #include<YAC/extractor.hpp>
+#include<YAC/ostream_byte_sink.hpp>
+#include<YAC/istream_byte_source.hpp>
 #include<stdexcept>
 #include<iostream>
+#include<fstream>
+// ReSharper disable once CppUnusedIncludeDirective
 #include<type_traits>
-#include "YAC/istream_byte_source.hpp"
-#include <QFileInfo>
-#include <QDir>
-#include "YAC/ostream_byte_sink.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
+#include<QFileInfo>
+#include<QDir>
 
 namespace {
 	template<class T>
@@ -20,27 +23,6 @@ namespace {
 		}
 		return result;
 	}
-
-	yac::EntryInfo * newFile(yac::EntryInfo * parent, std::string_view name, unsigned long long originalSize, unsigned long long compressedSize, unsigned long long positionInArchive) {
-		const auto file = new yac::EntryInfo;
-		file->parent = parent;
-		file->type = yac::EntryType::File;
-		file->name = QString::fromUtf8(name.data(), name.size());
-		file->sizeCompressed = originalSize;
-		file->sizeUncompressed = compressedSize;
-		file->positionInArchive = positionInArchive;
-		return file;
-	};
-
-	yac::EntryInfo * newFolder(yac::EntryInfo * parent, std::string_view name) {
-		const auto folder = new yac::EntryInfo;
-		folder->parent = parent;
-		folder->type = yac::EntryType::Folder;
-		folder->name = QString::fromUtf8(name.data(), name.size());
-		folder->sizeCompressed = 0;
-		folder->sizeUncompressed = 0;
-		return folder;
-	};
 
 	bool operator ==(QString lhs, std::string_view rhs) {
 		return static_cast<std::size_t>(lhs.size()) == rhs.size()
@@ -57,23 +39,9 @@ namespace {
 		return *childIt;
 	}
 
-	std::string getAbsolutePath(const yac::EntryInfo & fileInfo) {
-		if (fileInfo.parent == nullptr) {
-			return "";
-		}
-		std::string result = fileInfo.name.toStdString();
-		auto entryPtr = fileInfo.parent;
-		while (entryPtr->parent != nullptr) {
-			// todo: optimize
-			result = std::string(entryPtr->name.toStdString() + "/") + result; // NOLINT(performance-inefficient-string-concatenation)
-			entryPtr = entryPtr->parent;
-		}
-		return result;
-	}
-
-	void locateContent(std::istream & archive, unsigned long long headerPosition) {
+	void locateContent(std::istream & archive, yac::PositionInArchive headerPosition) {
 		// locate the file and skip the [un]compressed size data
-		archive.seekg(headerPosition + 16);
+		archive.seekg(headerPosition.value + 16);
 
 		// skip the internal path data
 		yac::IStreamByteSource source(archive);
@@ -82,27 +50,36 @@ namespace {
 		path.resize(pathLen);
 		archive.read(path.data(), pathLen);
 	}
+
+	QString toQString(std::string_view str) {
+		return QString::fromUtf8(str.data(), str.size());
+	}
 }
 
-yac::Extractor::TreeNode::TreeNode()
-	: m_left(nullptr)
-	, m_right(nullptr)
-	, m_value(0)
-	, m_isLeaf(false) {
+void yac::Extractor::TreeNode::dump(std::ostream& to) {
+	if (m_isLeaf) {
+		to << std::hex << static_cast<int>(m_value) << std::dec;
+	} else {
+		to << '(';
+		m_left->dump(to);
+		to << '-';
+		m_right->dump(to);
+		to << ')';
+	}
 }
+
+yac::Extractor::TreeNode::TreeNode() = default;
 
 yac::Extractor::TreeNode::TreeNode(Byte value)
-	: m_left(nullptr)
-	, m_right(nullptr)
-	, m_value(value)
-	, m_isLeaf(true) {
+	: m_size(HuffmanTreeSize{ 2 })
+	, m_isLeaf(true)
+	, m_value(value) {
 }
 
 yac::Extractor::TreeNode::TreeNode(TreeNode * a, TreeNode * b)
 	: m_left(a)
 	, m_right(b)
-	, m_value(0)
-	, m_isLeaf(false) {
+	, m_size(HuffmanTreeSize{ 1 } + a->m_size + b->m_size) {
 }
 
 yac::Extractor::TreeNode::~TreeNode() {
@@ -110,17 +87,17 @@ yac::Extractor::TreeNode::~TreeNode() {
 	delete m_right;
 }
 
-void yac::Extractor::extract(const EntryInfo& entry, std::istream & archive, std::string extractTo) {
+void yac::Extractor::extract(const EntryInfo& entry, std::istream & archive, const std::string & extractTo) {
 	if (entry.type == EntryType::Folder) {
 		QString folderPath = QString::fromStdString(extractTo);
 		if (entry.parent != nullptr) {
 			folderPath += '/';
 			folderPath += entry.name;
 		}
-		QFileInfo info(folderPath);
+		const QFileInfo info(folderPath);
 		bool isDir = info.isDir();
 		if (!info.exists()) {
-			QDir(folderPath).mkpath(".");
+			(void) QDir(folderPath).mkpath("."); // todo: error handling
 			isDir = true;
 		}
 		if (isDir) {
@@ -132,9 +109,9 @@ void yac::Extractor::extract(const EntryInfo& entry, std::istream & archive, std
 			std::cout << "warning: omitting a directory because of a file with the same name!\n";
 		}
 	} else {
-		std::string filePath = extractTo + '/' + entry.name.toStdString();
+		const std::string filePath = extractTo + '/' + entry.name.toStdString();
 		const auto qpath = QString::fromStdString(filePath);
-		QFileInfo fileInfo(qpath);
+		const QFileInfo fileInfo(qpath);
 		if (!fileInfo.exists()) {
 			std::ofstream file(filePath, std::ios::binary);
 			m_extract(entry, archive, file);
@@ -152,12 +129,29 @@ yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
 	archive.seekg(0);
 
 	IStreamByteSource source(archive);
-	EntryInfo * metadataTree = newFolder(nullptr, "root");
+	EntryInfo * metadataTree = EntryInfo::newFolder(nullptr, "root");
+	if (archiveEnd == -1) {
+		std::cout << "failed to open the archive for reading\n";
+		return metadataTree;
+	}
+
 	while (archive.tellg() != archiveEnd) {
-		const auto startPosition = archive.tellg();
+		const PositionInArchive startPosition{ static_cast<Size>(archive.tellg()) };
 		const auto header = m_readFileHeader(source);
-		std::cout << "extracted metadata about '" << header.path << "' compressed from " << header.originalSize << " to " << header.compressedSize << "\n";
-		archive.seekg(header.compressedSize, std::ios::cur);
+		std::cout
+			<< "extracted metadata about '" << header.path
+			<< "' compressed from " << header.originalSize.value
+			<< " to " << header.compressedSize.value << "\n";
+
+		const auto treePosition = archive.tellg();
+		auto tree = m_readNode(source);
+		std::cout << "tree dump: ";
+		tree->dump(std::cout);
+		std::cout << "\n";
+		archive.seekg(treePosition);
+		delete tree;
+
+		archive.seekg(header.compressedSize.value, std::ios::cur);
 		m_addMetadata(*metadataTree, header, startPosition);
 	}
 
@@ -173,23 +167,24 @@ std::string operator +(std::string_view lhs, std::string_view rhs) {
 }
 
 void yac::Extractor::m_fail(std::string_view errorText) {
-	throw std::runtime_error("Error while extracting: " + errorText);
+	std::string finalText = "Error while extracting: ";
+	finalText.append(errorText.data(), errorText.size());
+	throw std::runtime_error(finalText);
 }
 
 yac::Extractor::FileHeader yac::Extractor::m_readFileHeader(ByteSource & in) {
 	FileHeader header;
-	header.originalSize = readLittleEndian<uint64_t>(in);
-	header.compressedSize = readLittleEndian<uint64_t>(in);
+	header.originalSize = UncompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
+	header.compressedSize = CompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
 
 	const auto pathLength = readLittleEndian<uint32_t>(in);
 	header.path.resize(pathLength);
 	in.getBytes(reinterpret_cast<Byte *>(header.path.data()), pathLength);
 
 	return header;
-	m_tree = m_readNode(in);
 }
 
-void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, unsigned long long positionInArchive) {
+void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, PositionInArchive positionInArchive) {
 	auto currentNode = &metadataRoot;
 
 	const std::string_view path = fileInfo.path;
@@ -203,7 +198,7 @@ void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & 
 
 		const auto child = findChild(*currentNode, pathComponent);
 		if (child == nullptr) {
-			const auto nextNode = newFolder(currentNode, pathComponent);
+			const auto nextNode = EntryInfo::newFolder(currentNode, toQString(pathComponent));
 			currentNode->children.push_back(nextNode);
 			currentNode = nextNode;
 		} else if (child->type == EntryType::Folder) {
@@ -217,7 +212,7 @@ void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & 
 	const auto filename = path.substr(currentPosition, delimPosition - currentPosition);
 	const auto file = findChild(*currentNode, filename);
 	if (file == nullptr) {
-		currentNode->children.push_back(newFile(currentNode, filename, fileInfo.originalSize, fileInfo.compressedSize, positionInArchive));
+		currentNode->children.push_back(EntryInfo::newFile(currentNode, toQString(filename), fileInfo.originalSize, fileInfo.compressedSize, positionInArchive));
 	} else {
 		// todo: fuck: file already exists
 		std::cout << "warning: two files with the same name!\n";
@@ -225,7 +220,7 @@ void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & 
 }
 
 void yac::Extractor::m_extract(const EntryInfo & entryInfo, std::istream & archive, std::ostream & to) {
-	if (entryInfo.sizeUncompressed == 0) {
+	if (entryInfo.sizeUncompressed.value == 0) {
 		return;
 	}
 
@@ -235,7 +230,12 @@ void yac::Extractor::m_extract(const EntryInfo & entryInfo, std::istream & archi
 	m_tree = m_readNode(source);
 
 	OStreamByteSink sink(to);
-	m_decode(source, sink);
+	m_decode(source, sink, entryInfo.sizeUncompressed);
+
+	std::cout << "finished decoding from " << entryInfo.sizeCompressed.value << " to " << entryInfo.sizeUncompressed.value << '\n';
+	std::cout << "tree dump: ";
+	m_tree->dump(std::cout);
+	std::cout << "\n";
 
 	delete m_tree;
 }
@@ -258,9 +258,9 @@ yac::Extractor::TreeNode * yac::Extractor::m_readNode(ByteSource & in) {
 	return new TreeNode(left, right);
 }
 
-void yac::Extractor::m_decode(ByteSource & in, ByteSink & out) {
+void yac::Extractor::m_decode(ByteSource & in, ByteSink & out, UncompressedSize finalSize) {
 	if (m_tree->m_isLeaf) {
-		for (unsigned long long i = 0; i < m_fileSize; ++i) {
+		for (Size i = 0; i < finalSize.value; ++i) {
 			if (!out.putBytes(&m_tree->m_value, 1)) {
 				m_fail("failed to write extracted data");
 			}
@@ -272,7 +272,7 @@ void yac::Extractor::m_decode(ByteSource & in, ByteSink & out) {
 	Byte buf;
 	int used = 8;
 	long long totalReads{};
-	for (unsigned long long i = 0; i < m_fileSize; ++i) {
+	for (Size i = 0; i < finalSize.value; ++i) {
 		TreeNode * node = m_tree;
 		while (!node->m_isLeaf) {
 			if (used == 8) {

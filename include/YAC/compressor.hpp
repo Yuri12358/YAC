@@ -3,9 +3,9 @@
 
 #include<YAC/byte_sink.hpp>
 #include<YAC/byte_source.hpp>
+#include<YAC/size_types.hpp>
 #include<fstream>
 #include<vector>
-#include<cstddef>
 
 namespace yac {
 struct EntryInfo;
@@ -37,20 +37,20 @@ class Compressor {
 		TreeNode * m_tree = nullptr;
 		BitCode m_codes[256];
 
-		void m_calculateFrequency(ByteSource & in);
+		void m_calculateFrequency(std::istream & in);
 		void m_buildTree();
 		void m_generateCodes();
 		void m_visitNode(const TreeNode * node, BitCode & buffer);
-		void m_writeHeader(EntryInfo & fileInfo, std::ostream & out);
+		HuffmanTreeSize m_writeHeader(EntryInfo & fileInfo, std::ostream & out);
 
 		// returns the count of written bytes
-		unsigned long long m_printNode(const TreeNode * node, ByteSink & out);
+		HuffmanTreeSize m_printNode(const TreeNode * node, std::ostream & out);
 
-		void m_writeCompressedSize(std::ostream & out, std::ostream::pos_type headerStartPos, unsigned long long compressedSize);
+		void m_writeCompressedSize(std::ostream & out, std::ostream::pos_type headerStartPos, CompressedSize compressedSize);
 
 		// returns the compressed size (bytes written to out)
-		unsigned long long m_encode(ByteSource & in, ByteSink & out);
-		void m_compress(EntryInfo & fileInfo, ByteSource & in, std::ostream &out);
+		CompressedContentSize m_encode(std::istream & in, std::ostream & out);
+		void m_compress(EntryInfo & fileInfo, std::istream & in, std::ostream &out);
 
 	public:
 		// accepts directories and files

@@ -1,4 +1,5 @@
 #include "GuiInteractor.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
 #include <QFileInfo>
 #include <QCoreApplication>
 #include <QDir>
@@ -8,6 +9,8 @@ namespace
 {
 	void openFile(std::fstream & file, const std::string & path)
 	{
+		file.close();
+
 		const auto flags = std::ios::in | std::ios::out | std::ios::binary;
 		file.open(path, flags);
 		if (!file.is_open())
@@ -90,27 +93,30 @@ namespace yac
 	EntryInfo* GuiInteractor::formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent)
 	{
 		if (name == "") return nullptr;
-		QFileInfo info(name);
-		EntryInfo* result = new EntryInfo();
+		const QFileInfo info(name);
+		const auto result = new EntryInfo();
 		result->name = toUserFriendlyFileName(name);
 		result->fullPath = name;
 		result->parent = parent;
+		if (parent != nullptr) {
+			parent->children.push_back(result);
+		}
 		if (info.isFile())
 		{
 			result->type = EntryType::File;
-			result->sizeUncompressed = info.size();
+			result->sizeUncompressed = UncompressedSize{ static_cast<Size>(info.size()) };
 			files.push_back(result);
 		}
 		else if (info.isDir())
 		{
 			result->type = EntryType::Folder;
-			QDir dir(name);
+			const QDir dir(name);
 			auto children = dir.entryList();
-			for (auto child : children)
+			for (auto & child : children)
 			{
 				if (child != QString(".") && child != QString(".."))
 				{
-					result->children.push_back(formEntry(name + '/' + child, files, result));
+					formEntry(name + '/' + child, files, result);
 				}
 			}
 		}
@@ -123,7 +129,9 @@ namespace yac
 
 	void GuiInteractor::onSetFileTree(EntryInfo* root)
 	{
-		m_archFileModel->clear();
+		if (m_archFileModel->getCurrentEI() != root) {
+			m_archFileModel->clear();
+		}
 		m_archFileModel->setFileTree(root);
 	}
 
@@ -134,33 +142,35 @@ namespace yac
 
 	void GuiInteractor::onFireAddFiles(std::vector<EntryInfo*> files)
 	{
-		//std::ofstream archive("heck");
 		for (auto entry : files) {
 			m_compressor.compress(*entry, m_currentArchive);
 		}
+		setFileTree(m_archFileModel->getCurrentEI());
 	}
 
 	void GuiInteractor::onFireNewArchiveCreated(QString fullPath)
 	{
-		QDir dir(fullPath + "/..");
-		dir.mkpath(".");
+		const QDir dir(fullPath + "/..");
+		(void) dir.mkpath("."); // todo: error handling
 		openFile(m_currentArchive, fullPath.toStdString());
 		std::cout << "creating a new archive at '" << fullPath.toStdString() << "'\n";
 		assert(m_currentArchive.is_open());
+
+		Q_EMIT setFileTree(m_archFileModel->createNewRootFolder());
 	}
 
 	void GuiInteractor::onExtractToFolder(QUrl folder)
 	{
 		assert(m_currentArchive.is_open());
-		if (m_currentArchive.is_open() && m_archFileModel.getCurrentEI())
+		if (m_currentArchive.is_open() && m_archFileModel->getCurrentEI())
 		{
-			m_extractor.extract(*m_archFileModel.getCurrentEI(), m_currentArchive, folder.toLocalFile().toStdString());
+			m_extractor.extract(*m_archFileModel->getCurrentEI(), m_currentArchive, folder.toLocalFile().toStdString());
 		}
 	}
 
 	void GuiInteractor::onFireOpenArchive(QUrl url)
 	{
-		std::string path = url.toLocalFile().toStdString();
+		const auto path = url.toLocalFile().toStdString();
 		openFile(m_currentArchive, path);
 		std::cout << "opening an archive at '" << path << "'\n";
 		assert(m_currentArchive.is_open());
@@ -198,7 +208,7 @@ namespace yac
 	void GuiInteractor::onFireNewArchive(QUrl url, QString fn)
 	{
 		if (fn == "") return;
-		auto path = url.toLocalFile() + '/' + fn + ".yac";
+		const auto path = url.toLocalFile() + '/' + fn + ".yac";
 		QFile file(path);
 		if (file.open(QIODevice::ReadWrite))
 		{
