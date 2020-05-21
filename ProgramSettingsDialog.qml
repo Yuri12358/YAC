@@ -32,6 +32,7 @@ Window {
 		}
 
 		ComboBox {
+			id: cbEnhancedInfo
 			Layout.fillWidth: true
 			Layout.leftMargin: 5
 			Layout.rightMargin: 5
@@ -43,9 +44,6 @@ Window {
 				ListElement {
 					text: qsTr("Ukrainian")
 				}
-			}
-			onCurrentIndexChanged: {
-				guiInteractor.language = currentIndex
 			}
 		}
 
@@ -59,6 +57,7 @@ Window {
 			Layout.column: 0
 			checkable: false
 			onClicked: {
+				guiInteractor.language = cbEnhancedInfo.currentIndex
 				rootWnd.close()
 			}
 		}

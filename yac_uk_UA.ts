@@ -147,17 +147,17 @@
         <translation>Мова інтерфейсу: </translation>
     </message>
     <message>
-        <location filename="ProgramSettingsDialog.qml" line="41"/>
+        <location filename="ProgramSettingsDialog.qml" line="42"/>
         <source>English</source>
         <translation>Англійська</translation>
     </message>
     <message>
-        <location filename="ProgramSettingsDialog.qml" line="44"/>
+        <location filename="ProgramSettingsDialog.qml" line="45"/>
         <source>Ukrainian</source>
         <translation>Українська</translation>
     </message>
     <message>
-        <location filename="ProgramSettingsDialog.qml" line="53"/>
+        <location filename="ProgramSettingsDialog.qml" line="51"/>
         <source>Ok</source>
         <translation>Ок</translation>
     </message>
@@ -229,7 +229,7 @@
 <context>
     <name>yac::GuiInteractor</name>
     <message>
-        <location filename="GuiInteractor.cpp" line="132"/>
+        <location filename="GuiInteractor.cpp" line="133"/>
         <source>This file already exists: </source>
         <translation>Цей файл вже існує: </translation>
     </message>

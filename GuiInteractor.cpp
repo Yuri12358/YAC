@@ -53,6 +53,7 @@ namespace yac
 		qml->setContextProperty("guiInteractor", this);
 		qml->setContextProperty("fileModel", m_archFileModel);
 		m_settings.load();
+		setLanguage((int)m_settings.language);
 	}
 
 	GuiInteractor::~GuiInteractor()
