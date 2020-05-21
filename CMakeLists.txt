@@ -4,12 +4,18 @@ project(YACFrontendCMake LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS)
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_BUILD_TYPE Debug)
+
+include_directories(include)
 
 # QtCreator supports the following variables for Android, which are identical to qmake Android variables.
 # Check http://doc.qt.io/qt-5/deployment-android.html for more information.
@@ -41,8 +47,25 @@ else()
       ArchivedFileModel.cpp
       main.cpp
       qml.qrc
+		include/YAC/compressor.hpp
+		include/YAC/extractor.hpp
+		include/YAC/byte.hpp
+		include/YAC/non_copyable.hpp
+		include/YAC/strong_typedef.hpp
+		include/YAC/size_types.hpp
+		src/compressor.cpp
+		src/extractor.cpp
       ${TS_FILES}
     )
+endif()
+
+set_target_properties(YACFrontendCMake PROPERTIES CXX_EXTENSIONS OFF)
+if(MSVC)
+	target_compile_definitions(YACFrontendCMake PUBLIC -DNOMINMAX)
+	if(NOT(MSVC_VERSION LESS 1910))
+		message("Detected not-so-old msvc, enabling permissive mode and a sane __cplusplus marco")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /Zc:__cplusplus")
+	endif()
 endif()
 
 target_compile_definitions(YACFrontendCMake

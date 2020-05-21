@@ -18,5 +18,13 @@ int main(int argc, char *argv[])
 	yac::GuiInteractor interactor(engine.rootContext(), &engine);
     engine.load(url);
 
+	/*
+	interactor.fireNewArchiveCreated("D:\\asdf.yac");
+	QList<QUrl> urls;
+	urls.append(QUrl::fromLocalFile("D:\\test"));
+	interactor.fireAddFilesToArchive(urls);
+
+	interactor.fireOpenArchive(QUrl::fromLocalFile("D:\\asdf.yac"));
+	*/
     return app.exec();
 }

@@ -68,11 +68,17 @@ ApplicationWindow {
 	}
 
     FolderDialog {
-        id: extractToFolderFD
+		id: extractToFolderFD
+		onAccepted: {
+			guiInteractor.fireExtractToFolder(folder)
+		}
     }
 
     YacOnlyFileDialog {
         id: concatFD
+		onAccepted: {
+			guiInteractor.fireConcatWith(fileUrl)
+		}
 	}
 
     RowLayout {
@@ -98,6 +104,7 @@ ApplicationWindow {
 				onCheckedChanged: {
 					addToArchiveDialog = Funcs.createWindow("qrc:/AddToArchiveDialog.qml", rootWindow)
 					if (addToArchiveDialog != null) {
+						addToArchiveDialog.anyArchiveOpened = anyArchiveOpened
 						addToArchiveDialog.show()
 					}
 				}

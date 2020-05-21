@@ -1,83 +1,268 @@
 #include<YAC/extractor.hpp>
+#include<YAC/byte.hpp>
 #include<stdexcept>
+#include<iostream>
+#include<fstream>
+// ReSharper disable once CppUnusedIncludeDirective
+#include<type_traits>
+// ReSharper disable once CppUnusedIncludeDirective
+#include<QFileInfo>
+#include<QDir>
 
-yac::Extractor::TreeNode::TreeNode()
-	: m_left(nullptr)
-	, m_right(nullptr)
-	, m_value(0)
-	, m_isLeaf(false) {
+namespace {
+	template<class T>
+	T readLittleEndian(std::istream & in)
+	{
+		static_assert(std::is_integral_v<T>);
+		char buffer[sizeof(T)];
+		in.read(buffer, sizeof(T));
+		T result{};
+		for (unsigned i = 0; i < sizeof(T); ++i) {
+			result += static_cast<T>(static_cast<yac::Byte>(buffer[i])) << (8 * i);
+		}
+		return result;
+	}
+
+	bool operator ==(QString lhs, std::string_view rhs) {
+		return static_cast<std::size_t>(lhs.size()) == rhs.size()
+			&& std::equal(lhs.begin(), lhs.end(), rhs.begin());
+	}
+
+	yac::EntryInfo * findChild(const yac::EntryInfo & folder, std::string_view wantedName) {
+		const auto childIt = std::find_if(folder.children.begin(), folder.children.end(), [wantedName] (const yac::EntryInfo * child) {
+			return child->name == wantedName;
+		});
+		if (childIt == folder.children.end()) {
+			return nullptr;
+		}
+		return *childIt;
+	}
+
+	void locateContent(std::istream & archive, yac::PositionInArchive headerPosition) {
+		// locate the file and skip the [un]compressed size data
+		archive.seekg(headerPosition.value + 16);
+
+		// skip the internal path data
+		const auto pathLen = readLittleEndian<uint32_t>(archive);
+		std::string path;
+		path.resize(pathLen);
+		archive.read(path.data(), pathLen);
+	}
+
+	QString toQString(std::string_view str) {
+		return QString::fromUtf8(str.data(), str.size());
+	}
 }
 
+void yac::Extractor::TreeNode::dump(std::ostream& to) {
+	if (m_isLeaf) {
+		to << std::hex << static_cast<int>(m_value) << std::dec;
+	} else {
+		to << '(';
+		m_left->dump(to);
+		to << '-';
+		m_right->dump(to);
+		to << ')';
+	}
+}
+
+yac::Extractor::TreeNode::TreeNode() = default;
+
 yac::Extractor::TreeNode::TreeNode(Byte value)
-	: m_left(nullptr)
-	, m_right(nullptr)
-	, m_value(value)
-	, m_isLeaf(true) {
+	: m_size(HuffmanTreeSize{ 2 })
+	, m_isLeaf(true)
+	, m_value(value) {
 }
 
 yac::Extractor::TreeNode::TreeNode(TreeNode * a, TreeNode * b)
 	: m_left(a)
 	, m_right(b)
-	, m_value(0)
-	, m_isLeaf(false) {
+	, m_size(HuffmanTreeSize{ 1 } + a->m_size + b->m_size) {
 }
 
 yac::Extractor::TreeNode::~TreeNode() {
-	if (m_left) {
-		delete m_left;
-	}
-	if (m_right) {
-		delete m_right;
+	delete m_left;
+	delete m_right;
+}
+
+void yac::Extractor::extract(const EntryInfo& entry, std::istream & archive, const std::string & extractTo) {
+	if (entry.type == EntryType::Folder) {
+		QString folderPath = QString::fromStdString(extractTo);
+		if (entry.parent != nullptr) {
+			folderPath += '/';
+			folderPath += entry.name;
+		}
+		const QFileInfo info(folderPath);
+		bool isDir = info.isDir();
+		if (!info.exists()) {
+			(void) QDir(folderPath).mkpath("."); // todo: error handling
+			isDir = true;
+		}
+		if (isDir) {
+			for (auto child : entry.children) {
+				extract(*child, archive, folderPath.toStdString());
+			}
+		} else {
+			// todo: all has fucked up, there is already a file with that name
+			std::cout << "warning: omitting a directory because of a file with the same name!\n";
+		}
+	} else {
+		const std::string filePath = extractTo + '/' + entry.name.toStdString();
+		const auto qpath = QString::fromStdString(filePath);
+		const QFileInfo fileInfo(qpath);
+		if (!fileInfo.exists()) {
+			std::ofstream file(filePath, std::ios::binary);
+			m_extract(entry, archive, file);
+		} else {
+			// todo: that file already exists
+			std::cout << "warning: trying to extract a file on top of an existing one";
+		}
 	}
 }
 
-void yac::Extractor::extract(std::ifstream & in, std::ofstream & out) {
-	m_readHeader(in);
-	m_decode(in, out);
+yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
+	archive.seekg(0, std::ios::end);
+	const auto archiveEnd = archive.tellg();
+
+	archive.seekg(0);
+
+	EntryInfo * metadataTree = EntryInfo::newFolder(nullptr, "root");
+	if (archiveEnd == -1) {
+		std::cout << "failed to open the archive for reading\n";
+		return metadataTree;
+	}
+
+	while (archive.tellg() != archiveEnd) {
+		const PositionInArchive startPosition{ static_cast<Size>(archive.tellg()) };
+		const auto header = m_readFileHeader(archive);
+		std::cout
+			<< "extracted metadata about '" << header.path
+			<< "' compressed from " << header.originalSize.value
+			<< " to " << header.compressedSize.value << "\n";
+
+		archive.seekg(header.compressedSize.value, std::ios::cur);
+		m_addMetadata(*metadataTree, header, startPosition);
+	}
+
+	return metadataTree;
 }
 
-void yac::Extractor::m_checkFile(std::ifstream & in) {
-	if (!in.good()) {
-		throw std::runtime_error("Error while reading file");
+std::string operator +(std::string_view lhs, std::string_view rhs) {
+	std::string result;
+	result.reserve(lhs.size() + rhs.size());
+	for (auto i : { lhs, rhs })
+		result.append(i.data(), i.size());
+	return result;
+}
+
+void yac::Extractor::m_fail(std::string_view errorText) {
+	std::string finalText = "Error while extracting: ";
+	finalText.append(errorText.data(), errorText.size());
+	throw std::runtime_error(finalText);
+}
+
+yac::Extractor::FileHeader yac::Extractor::m_readFileHeader(std::istream & in) {
+	FileHeader header;
+	header.originalSize = UncompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
+	header.compressedSize = CompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
+
+	const auto pathLength = readLittleEndian<uint32_t>(in);
+	header.path.resize(pathLength);
+	in.read(header.path.data(), pathLength);
+
+	return header;
+}
+
+void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, PositionInArchive positionInArchive) {
+	auto currentNode = &metadataRoot;
+
+	const std::string_view path = fileInfo.path;
+	std::size_t currentPosition = 0;
+	auto delimPosition = path.find('/', currentPosition);
+
+	while (delimPosition != std::string_view::npos) {
+		const auto pathComponent = path.substr(currentPosition, delimPosition - currentPosition);
+		currentPosition = delimPosition + 1;
+		delimPosition = path.find('/', currentPosition);
+
+		const auto child = findChild(*currentNode, pathComponent);
+		if (child == nullptr) {
+			const auto nextNode = EntryInfo::newFolder(currentNode, toQString(pathComponent));
+			currentNode->children.push_back(nextNode);
+			currentNode = nextNode;
+		} else if (child->type == EntryType::Folder) {
+			currentNode = child;
+		} else {
+			// todo: fuck: the entry is a file and a folder at the same time!
+			std::cout << "warning: the entry is a file and a folder at the same time!\n";
+		}
+	}
+
+	const auto filename = path.substr(currentPosition, delimPosition - currentPosition);
+	const auto file = findChild(*currentNode, filename);
+	if (file == nullptr) {
+		currentNode->children.push_back(EntryInfo::newFile(currentNode, toQString(filename), fileInfo.originalSize, fileInfo.compressedSize, positionInArchive));
+	} else {
+		// todo: fuck: file already exists
+		std::cout << "warning: two files with the same name!\n";
 	}
 }
 
-void yac::Extractor::m_readHeader(std::ifstream & in) {
-	m_fileSize = 0;
-	for (int i = 0; i < 8; ++i) {
-		m_fileSize += (((unsigned long long) in.get()) << (8 * i));
+void yac::Extractor::m_extract(const EntryInfo & entryInfo, std::istream & archive, std::ostream & to) {
+	if (entryInfo.sizeUncompressed.value == 0) {
+		return;
 	}
-	m_checkFile(in);
-	m_tree = m_readNode(in);
+
+	locateContent(archive, entryInfo.positionInArchive);
+
+	m_tree = m_readNode(archive);
+
+	m_decode(archive, to, entryInfo.sizeUncompressed);
+
+	std::cout << "finished decoding from " << entryInfo.sizeCompressed.value << " to " << entryInfo.sizeUncompressed.value << '\n';
+
+	delete m_tree;
 }
 
-yac::Extractor::TreeNode * yac::Extractor::m_readNode(std::ifstream & in) {
-	bool isLeaf = in.get();
-	m_checkFile(in);
+yac::Extractor::TreeNode * yac::Extractor::m_readNode(std::istream & in) {
+	bool isLeaf;
+	if (!in.read(reinterpret_cast<char *>(&isLeaf), 1)) {
+		m_fail("failed to read whether the huffman table tree node is a leaf");
+	}
 	if (isLeaf) {
-		Byte c = in.get();
-		m_checkFile(in);
-		return new TreeNode(c);
+		char c;
+		if (in.read(&c, 1)) {
+			return new TreeNode(static_cast<Byte>(c));
+		}
+		m_fail("failed to read the huffman table tree node's corresponding byte");
 	}
-	return new TreeNode(m_readNode(in), m_readNode(in));
+	const auto left = m_readNode(in);
+	const auto right = m_readNode(in);
+	return new TreeNode(left, right);
 }
 
-void yac::Extractor::m_decode(std::ifstream & in, std::ofstream & out) {
+void yac::Extractor::m_decode(std::istream & in, std::ostream & out, UncompressedSize finalSize) {
 	if (m_tree->m_isLeaf) {
-		for (unsigned long long i = 0; i < m_fileSize; ++i) {
+		for (Size i = 0; i < finalSize.value; ++i) {
 			out.put(m_tree->m_value);
 		}
 		return;
 	}
+
 	Byte buf;
 	int used = 8;
-	for (unsigned long long i = 0; i < m_fileSize; ++i) {
+	long long totalReads{};
+	for (Size i = 0; i < finalSize.value; ++i) {
 		TreeNode * node = m_tree;
 		while (!node->m_isLeaf) {
 			if (used == 8) {
 				used = 0;
-				buf = in.get();
-				m_checkFile(in);
+				++totalReads;
+				if (!in.read(reinterpret_cast<char *>(&buf), 1)) {
+					std::cout << "Failed while attempting to perform the read #" << totalReads << '\n';
+					std::cout.flush();
+					m_fail("failed to read some data to decode");
+				}
 			}
 			if (buf & (1 << (7 - used++))) {
 				node = node->m_right;
@@ -85,7 +270,8 @@ void yac::Extractor::m_decode(std::ifstream & in, std::ofstream & out) {
 				node = node->m_left;
 			}
 		}
-		out.put(node->m_value);
+		if (!out.put(node->m_value)) {
+			m_fail("failed to write some decoded data");
+		};
 	}
 }
-

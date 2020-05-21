@@ -1,17 +1,22 @@
 #ifndef YAC_EXTRACTOR_HPP
 #define YAC_EXTRACTOR_HPP
 
-#include<fstream>
+#include<ostream>
+#include<istream>
+#include "ArchivedFileModel.hpp"
 
 namespace yac {
 	class Extractor {
 		typedef unsigned char Byte;
 
 		struct TreeNode {
-			TreeNode * m_left;
-			TreeNode * m_right;
-			bool m_isLeaf;
-			Byte m_value;
+			TreeNode * m_left{ nullptr };
+			TreeNode * m_right{ nullptr };
+			HuffmanTreeSize m_size{};
+			bool m_isLeaf{ false };
+			Byte m_value{};
+
+			void dump(std::ostream & to);
 
 			TreeNode();
 			TreeNode(Byte value);
@@ -19,15 +24,25 @@ namespace yac {
 			~TreeNode();
 		};
 
-		unsigned long long m_fileSize;
-		TreeNode * m_tree;
+		struct FileHeader {
+			UncompressedSize originalSize{ 0 };
+			CompressedSize compressedSize{ 0 };
+			std::string path;
+		};
 
-		void m_checkFile(std::ifstream & in);
-		void m_readHeader(std::ifstream & in);
-		TreeNode * m_readNode(std::ifstream & in);
-		void m_decode(std::ifstream & in, std::ofstream & out);
+		TreeNode * m_tree = nullptr;
+
+		void m_fail(std::string_view error);
+		FileHeader m_readFileHeader(std::istream & in);
+		TreeNode * m_readNode(std::istream & in);
+		void m_decode(std::istream & in, std::ostream & out, UncompressedSize finalSize);
+		void m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, PositionInArchive pos);
+		void m_extract(const EntryInfo & what, std::istream & from, std::ostream & to);
+
 	public:
-		void extract(std::ifstream & in, std::ofstream & out);
+		void extract(const EntryInfo & what, std::istream & from, const std::string & where);
+
+		EntryInfo * extractMetaInfo(std::istream & archive);
 	};
 }
 

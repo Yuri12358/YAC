@@ -1,6 +1,8 @@
 #ifndef GUIINTERACTOR_HPP
 #define GUIINTERACTOR_HPP
 
+#include <YAC/compressor.hpp>
+#include <YAC/extractor.hpp>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QFile>
@@ -33,6 +35,9 @@ class GuiInteractor : public QObject
 		void store();
 	} m_settings;
 
+	Compressor m_compressor;
+	Extractor m_extractor;
+	std::fstream m_currentArchive;
 public:
 	GuiInteractor(QQmlContext* qml, QQmlEngine* engine, QObject* parent = Q_NULLPTR);
 	~GuiInteractor();
@@ -70,12 +75,15 @@ public:
 
 private:
 	Q_SLOT void onFireNewArchive(QUrl parentFolder, QString fn);
-	Q_SLOT void onFireAddFiles(QList<QUrl> urls);
+	Q_SLOT void onFireAddFilesToArchive(QList<QUrl> urls);
 	Q_SLOT void onFireOpenArchive(QUrl url);;
 	Q_SLOT void onFireEnterFolder(QString name);
 	Q_SLOT void onFireGoBack();
 	Q_SLOT void onSetFileTree(EntryInfo* root);
 	Q_SLOT void onAddEntryToCurrentFolder(EntryInfo* entry);
+	Q_SLOT void onFireAddFiles(std::vector<EntryInfo*> files);
+	Q_SLOT void onFireNewArchiveCreated(QString fullPath);
+	Q_SLOT void onExtractToFolder(QUrl folder);
 	static QString toUserFriendlyFileName(QString name);
 	EntryInfo* formEntry(QUrl url, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);
 	EntryInfo* formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);
