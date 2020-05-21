@@ -29,6 +29,7 @@ namespace yac
 		QString fullPath;
 		unsigned long long sizeUncompressed = 0;
 		unsigned long long sizeCompressed = 0;
+		unsigned long long positionInArchive = 0;
 		EntryInfo& operator=(EntryInfo) = delete;
 		EntryInfo& operator=(const EntryInfo&) = delete;
 		EntryInfo& operator=(EntryInfo&) = delete;

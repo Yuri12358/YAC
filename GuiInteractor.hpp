@@ -37,6 +37,7 @@ class GuiInteractor : public QObject
 
 	Compressor m_compressor;
 	Extractor m_extractor;
+	std::fstream m_currentArchive;
 public:
 	GuiInteractor(QQmlContext* qml, QQmlEngine* engine, QObject* parent = Q_NULLPTR);
 	~GuiInteractor();
@@ -81,6 +82,8 @@ private:
 	Q_SLOT void onSetFileTree(EntryInfo* root);
 	Q_SLOT void onAddEntryToCurrentFolder(EntryInfo* entry);
 	Q_SLOT void onFireAddFiles(std::vector<EntryInfo*> files);
+	Q_SLOT void onFireNewArchiveCreated(QString fullPath);
+	Q_SLOT void onExtractToFolder(QUrl folder);
 	static QString toUserFriendlyFileName(QString name);
 	EntryInfo* formEntry(QUrl url, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);
 	EntryInfo* formEntry(QString name, std::vector<EntryInfo*>& files, EntryInfo* parent = nullptr);

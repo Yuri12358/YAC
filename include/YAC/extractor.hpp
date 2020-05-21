@@ -35,10 +35,11 @@ namespace yac {
 		FileHeader m_readFileHeader(ByteSource & in);
 		TreeNode * m_readNode(ByteSource & in);
 		void m_decode(ByteSource & in, ByteSink & out);
-		void m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo);
+		void m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, unsigned long long positionInArchive);
+		void m_extract(const EntryInfo & what, std::istream & from, std::ostream & to);
 
 	public:
-		void extract(ByteSource & in, ByteSink & out);
+		void extract(const EntryInfo & what, std::istream & from, std::string where);
 
 		EntryInfo * extractMetaInfo(std::istream & archive);
 	};

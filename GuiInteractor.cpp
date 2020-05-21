@@ -2,6 +2,20 @@
 #include <QFileInfo>
 #include <QCoreApplication>
 #include <QDir>
+#include <iostream>
+
+namespace
+{
+	void openFile(std::fstream & file, const std::string & path)
+	{
+		const auto flags = std::ios::in | std::ios::out | std::ios::binary;
+		file.open(path, flags);
+		if (!file.is_open())
+		{
+			file.open(path, flags | std::ios::trunc);
+		}
+	}
+}
 
 namespace yac
 {
@@ -51,6 +65,11 @@ namespace yac
 		connect(this, &GuiInteractor::fireGoBack, this, &GuiInteractor::onFireGoBack);
 		connect(this, &GuiInteractor::fireNewArchive, this, &GuiInteractor::onFireNewArchive);
 		connect(this, &GuiInteractor::fireAddFiles, this, &GuiInteractor::onFireAddFiles);
+		connect(this, &GuiInteractor::fireNewArchiveCreated, this, &GuiInteractor::onFireNewArchiveCreated);
+		connect(this, &GuiInteractor::fireOpenArchive, this, &GuiInteractor::onFireOpenArchive);
+		connect(this, &GuiInteractor::setFileTree, this, &GuiInteractor::onSetFileTree);
+		connect(this, &GuiInteractor::fireExtractToFolder, this, &GuiInteractor::onExtractToFolder);
+
 		qml->setContextProperty("guiInteractor", this);
 		qml->setContextProperty("fileModel", m_archFileModel);
 		m_settings.load();
@@ -115,16 +134,37 @@ namespace yac
 
 	void GuiInteractor::onFireAddFiles(std::vector<EntryInfo*> files)
 	{
-		std::ofstream archive("heck");
+		//std::ofstream archive("heck");
 		for (auto entry : files) {
-			m_compressor.compress(*entry, archive);
+			m_compressor.compress(*entry, m_currentArchive);
+		}
+	}
+
+	void GuiInteractor::onFireNewArchiveCreated(QString fullPath)
+	{
+		QDir dir(fullPath + "/..");
+		dir.mkpath(".");
+		openFile(m_currentArchive, fullPath.toStdString());
+		std::cout << "creating a new archive at '" << fullPath.toStdString() << "'\n";
+		assert(m_currentArchive.is_open());
+	}
+
+	void GuiInteractor::onExtractToFolder(QUrl folder)
+	{
+		assert(m_currentArchive.is_open());
+		if (m_currentArchive.is_open() && m_archFileModel.getCurrentEI())
+		{
+			m_extractor.extract(*m_archFileModel.getCurrentEI(), m_currentArchive, folder.toLocalFile().toStdString());
 		}
 	}
 
 	void GuiInteractor::onFireOpenArchive(QUrl url)
 	{
-		std::ifstream archive(url.path().toStdString());
-		onSetFileTree(m_extractor.extractMetaInfo(archive));
+		std::string path = url.toLocalFile().toStdString();
+		openFile(m_currentArchive, path);
+		std::cout << "opening an archive at '" << path << "'\n";
+		assert(m_currentArchive.is_open());
+		Q_EMIT setFileTree(m_extractor.extractMetaInfo(m_currentArchive));
 	}
 
 	void GuiInteractor::onFireAddFilesToArchive(QList<QUrl> urls)
@@ -146,7 +186,7 @@ namespace yac
 			}
 			if (!alreadyExists)
 			{
-				formEntry(url, files);
+				formEntry(url, files, currentFolder);
 			}
 		}
 		if (!files.empty())

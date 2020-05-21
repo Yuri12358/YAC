@@ -41,8 +41,11 @@ class Compressor {
 		void m_buildTree();
 		void m_generateCodes();
 		void m_visitNode(const TreeNode * node, BitCode & buffer);
-		void m_writeHeader(const EntryInfo & fileInfo, std::ostream & out);
-		void m_printNode(const TreeNode * node, ByteSink & out);
+		void m_writeHeader(EntryInfo & fileInfo, std::ostream & out);
+
+		// returns the count of written bytes
+		unsigned long long m_printNode(const TreeNode * node, ByteSink & out);
+
 		void m_writeCompressedSize(std::ostream & out, std::ostream::pos_type headerStartPos, unsigned long long compressedSize);
 
 		// returns the compressed size (bytes written to out)

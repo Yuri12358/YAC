@@ -75,23 +75,26 @@ void yac::Compressor::compress(EntryInfo & entry, std::ostream & out) {
 
 void yac::Compressor::m_compress(EntryInfo & fileInfo, ByteSource & in, std::ostream & out) {
 	m_calculateFrequency(in);
-	m_buildTree();
-	m_generateCodes();
+	if (m_fileSize > 0) {
+		m_buildTree();
+		m_generateCodes();
 
-	const auto startPosition = out.tellp();
-	m_writeHeader(fileInfo, out);
+		const auto startPosition = out.tellp();
+		m_writeHeader(fileInfo, out);
 
-	OStreamByteSink sink(out);
-	const auto compressedSize = m_encode(in, sink);
+		OStreamByteSink sink(out);
+		// add the content info size to the code tree size
+		fileInfo.sizeCompressed += m_encode(in, sink);
+		fileInfo.positionInArchive = startPosition;
 
-	const auto finalPosition = out.tellp();
+		const auto finalPosition = out.tellp();
+		m_writeCompressedSize(out, startPosition, fileInfo.sizeCompressed);
 
-	fileInfo.sizeCompressed = compressedSize;
-
-	m_writeCompressedSize(out, startPosition, compressedSize);
-
-	// restore the position after header modification
-	out.seekp(finalPosition);
+		// restore the position after header modification
+		out.seekp(finalPosition);
+	} else {
+		m_writeHeader(fileInfo, out);
+	}
 }
 
 void yac::Compressor::m_calculateFrequency(ByteSource & in) {
@@ -140,32 +143,36 @@ void yac::Compressor::m_visitNode(const TreeNode * node, BitCode & buffer) {
 	buffer.pop_back();
 }
 
-void yac::Compressor::m_writeHeader(const EntryInfo & fileInfo, std::ostream & out) {
-	const auto pathToStore = getAbsolutePath(fileInfo);
-
+void yac::Compressor::m_writeHeader(EntryInfo & fileInfo, std::ostream & out) {
 	writeLittleEndian(out, static_cast<uint64_t>(fileInfo.sizeUncompressed));
 
 	// skip some place for the compressed size
-	out.seekp(8, std::ios::cur);
+	writeLittleEndian(out, static_cast<uint64_t>(0));
 
 	// write the filename and its 4-byte len
+	const auto pathToStore = getAbsolutePath(fileInfo);
 	writeLittleEndian(out, static_cast<uint32_t>(pathToStore.size()));
 	out.write(pathToStore.data(), pathToStore.size());
 
-	OStreamByteSink sink(out);
-	m_printNode(m_tree, sink);
-	delete m_tree;
+	if (m_fileSize > 0) {
+		OStreamByteSink sink(out);
+		fileInfo.sizeCompressed += m_printNode(m_tree, sink);
+		delete m_tree;
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void yac::Compressor::m_printNode(const TreeNode * node, ByteSink & out) {
+unsigned long long yac::Compressor::m_printNode(const TreeNode * node, ByteSink & out) {
 	out.putBytes(reinterpret_cast<const Byte *>(&node->m_isLeaf), 1);
+	unsigned long long writtenBytes = 1;
 	if (node->m_isLeaf) {
 		out.putBytes(&node->m_value, 1);
+		++writtenBytes;
 	} else {
-		m_printNode(node->m_left, out);
-		m_printNode(node->m_right, out);
+		writtenBytes += m_printNode(node->m_left, out);
+		writtenBytes += m_printNode(node->m_right, out);
 	}
+	return writtenBytes;
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

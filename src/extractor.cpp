@@ -3,6 +3,9 @@
 #include<iostream>
 #include<type_traits>
 #include "YAC/istream_byte_source.hpp"
+#include <QFileInfo>
+#include <QDir>
+#include "YAC/ostream_byte_sink.hpp"
 
 namespace {
 	template<class T>
@@ -18,17 +21,20 @@ namespace {
 		return result;
 	}
 
-	yac::EntryInfo * newFile(std::string_view name, unsigned long long originalSize, unsigned long long compressedSize) {
-		const auto folder = new yac::EntryInfo;
-		folder->type = yac::EntryType::File;
-		folder->name = QString::fromUtf8(name.data(), name.size());
-		folder->sizeCompressed = originalSize;
-		folder->sizeUncompressed = compressedSize;
-		return folder;
+	yac::EntryInfo * newFile(yac::EntryInfo * parent, std::string_view name, unsigned long long originalSize, unsigned long long compressedSize, unsigned long long positionInArchive) {
+		const auto file = new yac::EntryInfo;
+		file->parent = parent;
+		file->type = yac::EntryType::File;
+		file->name = QString::fromUtf8(name.data(), name.size());
+		file->sizeCompressed = originalSize;
+		file->sizeUncompressed = compressedSize;
+		file->positionInArchive = positionInArchive;
+		return file;
 	};
 
-	yac::EntryInfo * newFolder(std::string_view name) {
+	yac::EntryInfo * newFolder(yac::EntryInfo * parent, std::string_view name) {
 		const auto folder = new yac::EntryInfo;
+		folder->parent = parent;
 		folder->type = yac::EntryType::Folder;
 		folder->name = QString::fromUtf8(name.data(), name.size());
 		folder->sizeCompressed = 0;
@@ -49,6 +55,32 @@ namespace {
 			return nullptr;
 		}
 		return *childIt;
+	}
+
+	std::string getAbsolutePath(const yac::EntryInfo & fileInfo) {
+		if (fileInfo.parent == nullptr) {
+			return "";
+		}
+		std::string result = fileInfo.name.toStdString();
+		auto entryPtr = fileInfo.parent;
+		while (entryPtr->parent != nullptr) {
+			// todo: optimize
+			result = std::string(entryPtr->name.toStdString() + "/") + result; // NOLINT(performance-inefficient-string-concatenation)
+			entryPtr = entryPtr->parent;
+		}
+		return result;
+	}
+
+	void locateContent(std::istream & archive, unsigned long long headerPosition) {
+		// locate the file and skip the [un]compressed size data
+		archive.seekg(headerPosition + 16);
+
+		// skip the internal path data
+		yac::IStreamByteSource source(archive);
+		const auto pathLen = readLittleEndian<uint32_t>(source);
+		std::string path;
+		path.resize(pathLen);
+		archive.read(path.data(), pathLen);
 	}
 }
 
@@ -74,17 +106,43 @@ yac::Extractor::TreeNode::TreeNode(TreeNode * a, TreeNode * b)
 }
 
 yac::Extractor::TreeNode::~TreeNode() {
-	if (m_left) {
-		delete m_left;
-	}
-	if (m_right) {
-		delete m_right;
-	}
+	delete m_left;
+	delete m_right;
 }
 
-void yac::Extractor::extract(ByteSource & in, ByteSink & out) {
-	//m_readHeader(in);
-	//m_decode(in, out);
+void yac::Extractor::extract(const EntryInfo& entry, std::istream & archive, std::string extractTo) {
+	if (entry.type == EntryType::Folder) {
+		QString folderPath = QString::fromStdString(extractTo);
+		if (entry.parent != nullptr) {
+			folderPath += '/';
+			folderPath += entry.name;
+		}
+		QFileInfo info(folderPath);
+		bool isDir = info.isDir();
+		if (!info.exists()) {
+			QDir(folderPath).mkpath(".");
+			isDir = true;
+		}
+		if (isDir) {
+			for (auto child : entry.children) {
+				extract(*child, archive, folderPath.toStdString());
+			}
+		} else {
+			// todo: all has fucked up, there is already a file with that name
+			std::cout << "warning: omitting a directory because of a file with the same name!\n";
+		}
+	} else {
+		std::string filePath = extractTo + '/' + entry.name.toStdString();
+		const auto qpath = QString::fromStdString(filePath);
+		QFileInfo fileInfo(qpath);
+		if (!fileInfo.exists()) {
+			std::ofstream file(filePath, std::ios::binary);
+			m_extract(entry, archive, file);
+		} else {
+			// todo: that file already exists
+			std::cout << "warning: trying to extract a file on top of an existing one";
+		}
+	}
 }
 
 yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
@@ -94,11 +152,13 @@ yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
 	archive.seekg(0);
 
 	IStreamByteSource source(archive);
-	EntryInfo * metadataTree = newFolder("root");
+	EntryInfo * metadataTree = newFolder(nullptr, "root");
 	while (archive.tellg() != archiveEnd) {
+		const auto startPosition = archive.tellg();
 		const auto header = m_readFileHeader(source);
+		std::cout << "extracted metadata about '" << header.path << "' compressed from " << header.originalSize << " to " << header.compressedSize << "\n";
 		archive.seekg(header.compressedSize, std::ios::cur);
-		m_addMetadata(*metadataTree, header);
+		m_addMetadata(*metadataTree, header, startPosition);
 	}
 
 	return metadataTree;
@@ -129,7 +189,7 @@ yac::Extractor::FileHeader yac::Extractor::m_readFileHeader(ByteSource & in) {
 	m_tree = m_readNode(in);
 }
 
-void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo) {
+void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, unsigned long long positionInArchive) {
 	auto currentNode = &metadataRoot;
 
 	const std::string_view path = fileInfo.path;
@@ -143,7 +203,7 @@ void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & 
 
 		const auto child = findChild(*currentNode, pathComponent);
 		if (child == nullptr) {
-			const auto nextNode = newFolder(pathComponent);
+			const auto nextNode = newFolder(currentNode, pathComponent);
 			currentNode->children.push_back(nextNode);
 			currentNode = nextNode;
 		} else if (child->type == EntryType::Folder) {
@@ -157,11 +217,27 @@ void yac::Extractor::m_addMetadata(EntryInfo & metadataRoot, const FileHeader & 
 	const auto filename = path.substr(currentPosition, delimPosition - currentPosition);
 	const auto file = findChild(*currentNode, filename);
 	if (file == nullptr) {
-		currentNode->children.push_back(newFile(filename, fileInfo.originalSize, fileInfo.compressedSize));
+		currentNode->children.push_back(newFile(currentNode, filename, fileInfo.originalSize, fileInfo.compressedSize, positionInArchive));
 	} else {
 		// todo: fuck: file already exists
 		std::cout << "warning: two files with the same name!\n";
 	}
+}
+
+void yac::Extractor::m_extract(const EntryInfo & entryInfo, std::istream & archive, std::ostream & to) {
+	if (entryInfo.sizeUncompressed == 0) {
+		return;
+	}
+
+	locateContent(archive, entryInfo.positionInArchive);
+
+	IStreamByteSource source(archive);
+	m_tree = m_readNode(source);
+
+	OStreamByteSink sink(to);
+	m_decode(source, sink);
+
+	delete m_tree;
 }
 
 yac::Extractor::TreeNode * yac::Extractor::m_readNode(ByteSource & in) {
