@@ -1,8 +1,6 @@
 #ifndef YAC_COMPRESSOR_HPP
 #define YAC_COMPRESSOR_HPP
 
-#include<YAC/byte_sink.hpp>
-#include<YAC/byte_source.hpp>
 #include<YAC/size_types.hpp>
 #include<fstream>
 #include<vector>

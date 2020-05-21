@@ -47,27 +47,14 @@ else()
       ArchivedFileModel.cpp
       main.cpp
       qml.qrc
-		include/YAC/yac.hpp
 		include/YAC/compressor.hpp
 		include/YAC/extractor.hpp
 		include/YAC/byte.hpp
 		include/YAC/non_copyable.hpp
-		include/YAC/byte_source.hpp
-		include/YAC/byte_sink.hpp
-		include/YAC/istream_byte_source.hpp
-		include/YAC/ostream_byte_sink.hpp
-		include/YAC/block_sequence_byte_source.hpp
-		include/YAC/block_sequence_byte_sink.hpp
 		include/YAC/strong_typedef.hpp
 		include/YAC/size_types.hpp
-		src/main.cpp
-		src/yac.cpp
 		src/compressor.cpp
 		src/extractor.cpp
-		src/istream_byte_source.cpp
-		src/ostream_byte_sink.cpp
-		src/block_sequence_byte_source.cpp
-		src/block_sequence_byte_sink.cpp
       ${TS_FILES}
     )
 endif()

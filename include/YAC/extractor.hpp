@@ -1,8 +1,6 @@
 #ifndef YAC_EXTRACTOR_HPP
 #define YAC_EXTRACTOR_HPP
 
-#include<YAC/byte_source.hpp>
-#include<YAC/byte_sink.hpp>
 #include<ostream>
 #include<istream>
 #include "ArchivedFileModel.hpp"
@@ -35,9 +33,9 @@ namespace yac {
 		TreeNode * m_tree = nullptr;
 
 		void m_fail(std::string_view error);
-		FileHeader m_readFileHeader(ByteSource & in);
-		TreeNode * m_readNode(ByteSource & in);
-		void m_decode(ByteSource & in, ByteSink & out, UncompressedSize finalSize);
+		FileHeader m_readFileHeader(std::istream & in);
+		TreeNode * m_readNode(std::istream & in);
+		void m_decode(std::istream & in, std::ostream & out, UncompressedSize finalSize);
 		void m_addMetadata(EntryInfo & metadataRoot, const FileHeader & fileInfo, PositionInArchive pos);
 		void m_extract(const EntryInfo & what, std::istream & from, std::ostream & to);
 

@@ -1,6 +1,5 @@
 #include<YAC/compressor.hpp>
-#include<YAC/ostream_byte_sink.hpp>
-#include<YAC/istream_byte_source.hpp>
+#include<YAC/byte.hpp>
 #include"ArchivedFileModel.hpp"
 #include<functional>
 #include<set>
@@ -64,7 +63,6 @@ void yac::Compressor::compress(EntryInfo & entry, std::ostream & archive) {
 	if (entry.type == EntryType::File) {
 		const auto path = entry.fullPath.toStdString();
 		std::ifstream fileStream(path, std::ios::binary);
-		//IStreamByteSource source(fileStream);
 		m_compress(entry, fileStream, archive);
 	} else {
 		for (auto & child : entry.children) {
@@ -82,7 +80,6 @@ void yac::Compressor::m_compress(EntryInfo & fileInfo, std::istream & in, std::o
 		const Size startPosition = out.tellp();
 		const auto treeSize = m_writeHeader(fileInfo, out);
 
-		//OStreamByteSink sink(out);
 		// add the content info size to the code tree size
 		fileInfo.sizeCompressed = m_encode(in, out) + treeSize;
 		fileInfo.positionInArchive = PositionInArchive{ startPosition };
@@ -224,11 +221,9 @@ yac::CompressedContentSize yac::Compressor::m_encode(std::istream & in, std::ost
 	std::cout << '\n';
 	std::cout << "Total bytes encoded: " << totalBytes << '\n';
 	if (used) {
-		//out.putBytes(&writeBuffer, 1);
 		out.put(writeBuffer);
 		++totalWrites.value;
 	}
-	//out.finish();
 	std::cout << "Total encoded bytes written: " << totalWrites.value << '\n';
 	return totalWrites;
 }

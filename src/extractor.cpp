@@ -1,6 +1,5 @@
 #include<YAC/extractor.hpp>
-#include<YAC/ostream_byte_sink.hpp>
-#include<YAC/istream_byte_source.hpp>
+#include<YAC/byte.hpp>
 #include<stdexcept>
 #include<iostream>
 #include<fstream>
@@ -12,14 +11,14 @@
 
 namespace {
 	template<class T>
-	T readLittleEndian(yac::ByteSource & in)
+	T readLittleEndian(std::istream & in)
 	{
 		static_assert(std::is_integral_v<T>);
-		yac::Byte buffer[sizeof(T)];
-		in.getBytes(buffer, sizeof(T));
+		char buffer[sizeof(T)];
+		in.read(buffer, sizeof(T));
 		T result{};
 		for (unsigned i = 0; i < sizeof(T); ++i) {
-			result += static_cast<T>(buffer[i]) << (8 * i);
+			result += static_cast<T>(static_cast<yac::Byte>(buffer[i])) << (8 * i);
 		}
 		return result;
 	}
@@ -44,8 +43,7 @@ namespace {
 		archive.seekg(headerPosition.value + 16);
 
 		// skip the internal path data
-		yac::IStreamByteSource source(archive);
-		const auto pathLen = readLittleEndian<uint32_t>(source);
+		const auto pathLen = readLittleEndian<uint32_t>(archive);
 		std::string path;
 		path.resize(pathLen);
 		archive.read(path.data(), pathLen);
@@ -128,7 +126,6 @@ yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
 
 	archive.seekg(0);
 
-	IStreamByteSource source(archive);
 	EntryInfo * metadataTree = EntryInfo::newFolder(nullptr, "root");
 	if (archiveEnd == -1) {
 		std::cout << "failed to open the archive for reading\n";
@@ -137,19 +134,11 @@ yac::EntryInfo * yac::Extractor::extractMetaInfo(std::istream & archive) {
 
 	while (archive.tellg() != archiveEnd) {
 		const PositionInArchive startPosition{ static_cast<Size>(archive.tellg()) };
-		const auto header = m_readFileHeader(source);
+		const auto header = m_readFileHeader(archive);
 		std::cout
 			<< "extracted metadata about '" << header.path
 			<< "' compressed from " << header.originalSize.value
 			<< " to " << header.compressedSize.value << "\n";
-
-		const auto treePosition = archive.tellg();
-		auto tree = m_readNode(source);
-		std::cout << "tree dump: ";
-		tree->dump(std::cout);
-		std::cout << "\n";
-		archive.seekg(treePosition);
-		delete tree;
 
 		archive.seekg(header.compressedSize.value, std::ios::cur);
 		m_addMetadata(*metadataTree, header, startPosition);
@@ -172,14 +161,14 @@ void yac::Extractor::m_fail(std::string_view errorText) {
 	throw std::runtime_error(finalText);
 }
 
-yac::Extractor::FileHeader yac::Extractor::m_readFileHeader(ByteSource & in) {
+yac::Extractor::FileHeader yac::Extractor::m_readFileHeader(std::istream & in) {
 	FileHeader header;
 	header.originalSize = UncompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
 	header.compressedSize = CompressedSize{ static_cast<Size>(readLittleEndian<uint64_t>(in)) };
 
 	const auto pathLength = readLittleEndian<uint32_t>(in);
 	header.path.resize(pathLength);
-	in.getBytes(reinterpret_cast<Byte *>(header.path.data()), pathLength);
+	in.read(header.path.data(), pathLength);
 
 	return header;
 }
@@ -226,46 +215,37 @@ void yac::Extractor::m_extract(const EntryInfo & entryInfo, std::istream & archi
 
 	locateContent(archive, entryInfo.positionInArchive);
 
-	IStreamByteSource source(archive);
-	m_tree = m_readNode(source);
+	m_tree = m_readNode(archive);
 
-	OStreamByteSink sink(to);
-	m_decode(source, sink, entryInfo.sizeUncompressed);
+	m_decode(archive, to, entryInfo.sizeUncompressed);
 
 	std::cout << "finished decoding from " << entryInfo.sizeCompressed.value << " to " << entryInfo.sizeUncompressed.value << '\n';
-	std::cout << "tree dump: ";
-	m_tree->dump(std::cout);
-	std::cout << "\n";
 
 	delete m_tree;
 }
 
-yac::Extractor::TreeNode * yac::Extractor::m_readNode(ByteSource & in) {
+yac::Extractor::TreeNode * yac::Extractor::m_readNode(std::istream & in) {
 	bool isLeaf;
-	if (in.getBytes(reinterpret_cast<Byte *>(&isLeaf), 1) < 1) {
+	if (!in.read(reinterpret_cast<char *>(&isLeaf), 1)) {
 		m_fail("failed to read whether the huffman table tree node is a leaf");
 	}
 	if (isLeaf) {
-		Byte c;
-		if (in.getBytes(&c, 1)) {
-			return new TreeNode(c);
-		} else {
-			m_fail("failed to read the huffman table tree node's corresponding byte");
+		char c;
+		if (in.read(&c, 1)) {
+			return new TreeNode(static_cast<Byte>(c));
 		}
+		m_fail("failed to read the huffman table tree node's corresponding byte");
 	}
 	const auto left = m_readNode(in);
 	const auto right = m_readNode(in);
 	return new TreeNode(left, right);
 }
 
-void yac::Extractor::m_decode(ByteSource & in, ByteSink & out, UncompressedSize finalSize) {
+void yac::Extractor::m_decode(std::istream & in, std::ostream & out, UncompressedSize finalSize) {
 	if (m_tree->m_isLeaf) {
 		for (Size i = 0; i < finalSize.value; ++i) {
-			if (!out.putBytes(&m_tree->m_value, 1)) {
-				m_fail("failed to write extracted data");
-			}
+			out.put(m_tree->m_value);
 		}
-		out.finish();
 		return;
 	}
 
@@ -278,7 +258,7 @@ void yac::Extractor::m_decode(ByteSource & in, ByteSink & out, UncompressedSize 
 			if (used == 8) {
 				used = 0;
 				++totalReads;
-				if (in.getBytes(&buf, 1) < 1) {
+				if (!in.read(reinterpret_cast<char *>(&buf), 1)) {
 					std::cout << "Failed while attempting to perform the read #" << totalReads << '\n';
 					std::cout.flush();
 					m_fail("failed to read some data to decode");
@@ -290,10 +270,8 @@ void yac::Extractor::m_decode(ByteSource & in, ByteSink & out, UncompressedSize 
 				node = node->m_left;
 			}
 		}
-		if (!out.putBytes(&node->m_value, 1)) {
+		if (!out.put(node->m_value)) {
 			m_fail("failed to write some decoded data");
 		};
 	}
-	out.finish();
 }
-
