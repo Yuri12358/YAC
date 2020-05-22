@@ -98,14 +98,14 @@ namespace yac
 		result->name = toUserFriendlyFileName(name);
 		result->fullPath = name;
 		result->parent = parent;
-		if (parent != nullptr) {
-			parent->children.push_back(result);
-		}
 		if (info.isFile())
 		{
 			result->type = EntryType::File;
 			result->sizeUncompressed = UncompressedSize{ static_cast<Size>(info.size()) };
 			files.push_back(result);
+			if (parent != nullptr) {
+				parent->children.push_back(result);
+			}
 		}
 		else if (info.isDir())
 		{
@@ -117,6 +117,11 @@ namespace yac
 				if (child != QString(".") && child != QString(".."))
 				{
 					formEntry(name + '/' + child, files, result);
+				}
+			}
+			if (!result->children.empty()) {
+				if (parent != nullptr) {
+					parent->children.push_back(result);
 				}
 			}
 		}
@@ -173,12 +178,16 @@ namespace yac
 		const auto path = url.toLocalFile().toStdString();
 		openFile(m_currentArchive, path);
 		std::cout << "opening an archive at '" << path << "'\n";
-		assert(m_currentArchive.is_open());
-		Q_EMIT setFileTree(m_extractor.extractMetaInfo(m_currentArchive));
+		if (m_currentArchive.is_open()) {
+			Q_EMIT setFileTree(m_extractor.extractMetaInfo(m_currentArchive));
+		} else {
+			Q_EMIT fireShowErrorDialog(tr("Failed to open the file: ") + url.toLocalFile());
+		}
 	}
 
 	void GuiInteractor::onFireAddFilesToArchive(QList<QUrl> urls)
 	{
+		bool noErrors = true;
 		std::vector<EntryInfo*> files;
 		for (const auto& url : urls)
 		{
@@ -190,6 +199,7 @@ namespace yac
 				if (fn == child->name)
 				{
 					Q_EMIT fireShowErrorDialog(tr("This file already exists: ") + fn);
+					noErrors = false;
 					alreadyExists = true;
 					break;
 				}
@@ -203,6 +213,10 @@ namespace yac
 		{
 			Q_EMIT fireAddFiles(files);
 		}
+		else if (noErrors)
+		{
+			Q_EMIT fireShowErrorDialog(tr("No files to add."));
+		}
 	}
 
 	void GuiInteractor::onFireNewArchive(QUrl url, QString fn)
@@ -214,6 +228,8 @@ namespace yac
 		{
 			file.close();
 			Q_EMIT fireNewArchiveCreated(path);
+		} else {
+			Q_EMIT fireShowErrorDialog(tr("Failed to create the file: ") + path);
 		}
 	}
 

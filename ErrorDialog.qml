@@ -20,6 +20,7 @@ BasicDialogWindow {
 			Layout.margins: 15
 			Layout.alignment: Qt.AlignHCenter
 			text: qsTr("Error: ") + errorName
+			wrapMode: Text.WrapAnywhere
 		}
 
 		Button {
