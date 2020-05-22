@@ -15,7 +15,7 @@ ApplicationWindow {
 
 	property var addToArchiveDialog: null
 	property var fileInfoDialog: null
-	property bool archivationActive: archPB.visible
+	property bool archivationActive: false
 	property var programSettingsDialog: null
 	property var aboutDialog: null
 

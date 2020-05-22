@@ -140,11 +140,6 @@ namespace yac
 		m_archFileModel->setFileTree(root);
 	}
 
-	void GuiInteractor::onAddEntryToCurrentFolder(EntryInfo* entry)
-	{
-		m_archFileModel->addEntry(entry);
-	}
-
 	void GuiInteractor::onFireAddFiles(std::vector<EntryInfo*> files)
 	{
 		for (auto entry : files) {
