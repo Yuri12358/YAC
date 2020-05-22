@@ -66,8 +66,6 @@ void yac::Extractor::TreeNode::dump(std::ostream& to) {
 	}
 }
 
-yac::Extractor::TreeNode::TreeNode() = default;
-
 yac::Extractor::TreeNode::TreeNode(Byte value)
 	: m_size(HuffmanTreeSize{ 2 })
 	, m_isLeaf(true)

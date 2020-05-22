@@ -15,6 +15,8 @@ namespace yac {
 	/**
 	 * Performs the compression of files and folders
 	 * using the Huffman algorithm.
+	 *
+	 * @see Extractor
 	 */
 	class Compressor {
 		/**
@@ -69,11 +71,6 @@ namespace yac {
 			 * The right subtree. Null for the leaf nodes.
 			 */
 			TreeNode * m_right = nullptr;
-
-			/**
-			 * Default constructor. Should not be used.
-			 */
-			TreeNode() = default;
 
 			/**
 			 * The constructor for a leaf node.
