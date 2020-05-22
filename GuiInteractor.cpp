@@ -216,7 +216,10 @@ namespace yac
 
 	void GuiInteractor::onFireNewArchive(QUrl url, QString fn)
 	{
-		if (fn == "") return;
+		if (fn == "") {
+			Q_EMIT fireShowErrorDialog(tr("You have to specify the archive name!"));
+			return;
+		}
 		const auto path = url.toLocalFile() + '/' + fn + ".yac";
 		QFile file(path);
 		if (file.open(QIODevice::ReadWrite))
