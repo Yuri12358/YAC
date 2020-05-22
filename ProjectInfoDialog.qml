@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.3
 
 BasicDialogWindow {
 	id: rootWnd
-	width: 280
+	width: 350
 	height: 200
 	//minimumWidth: 300
 	//minimumHeight: 150
@@ -29,6 +29,7 @@ BasicDialogWindow {
 		RowLayout {
 			Layout.fillHeight: true
 			Layout.fillWidth: true
+			Layout.alignment: Qt.AlignHCenter
 			Image {
 				width: 100
 				height: 100

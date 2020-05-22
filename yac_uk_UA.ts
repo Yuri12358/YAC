@@ -279,22 +279,22 @@
 <context>
     <name>yac::GuiInteractor</name>
     <message>
-        <location filename="GuiInteractor.cpp" line="184"/>
+        <location filename="GuiInteractor.cpp" line="179"/>
         <source>Failed to open the file: </source>
         <translation>Не вдалося відкрити файл: </translation>
     </message>
     <message>
-        <location filename="GuiInteractor.cpp" line="201"/>
+        <location filename="GuiInteractor.cpp" line="196"/>
         <source>This file already exists: </source>
         <translation>Цей файл вже існує: </translation>
     </message>
     <message>
-        <location filename="GuiInteractor.cpp" line="218"/>
+        <location filename="GuiInteractor.cpp" line="213"/>
         <source>No files to add.</source>
         <translation>Нічого додавати.</translation>
     </message>
     <message>
-        <location filename="GuiInteractor.cpp" line="232"/>
+        <location filename="GuiInteractor.cpp" line="227"/>
         <source>Failed to create the file: </source>
         <translation>Не вдалося створити файл: </translation>
     </message>
