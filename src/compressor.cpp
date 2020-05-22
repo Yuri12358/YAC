@@ -58,21 +58,21 @@ yac::Compressor::TreeNode::~TreeNode() {
 	delete m_right;
 }
 
-void yac::Compressor::compress(EntryInfo & entry, std::ostream & archive) {
+void yac::Compressor::addToArchive(EntryInfo & entry, std::ostream & archive) {
 	archive.seekp(0, std::ios::end);
 	if (entry.type == EntryType::File) {
 		const auto path = entry.fullPath.toStdString();
 		std::ifstream fileStream(path, std::ios::binary);
-		m_compress(entry, fileStream, archive);
+		m_addFileToArchive(entry, fileStream, archive);
 	} else {
 		for (auto & child : entry.children) {
-			compress(*child, archive);
+			addToArchive(*child, archive);
 		}
 	}
 }
 
-void yac::Compressor::m_compress(EntryInfo & fileInfo, std::istream & in, std::ostream & out) {
-	m_calculateFrequency(in);
+void yac::Compressor::m_addFileToArchive(EntryInfo & fileInfo, std::istream & in, std::ostream & out) {
+	m_calculateFrequencyAndFileSize(in);
 	if (m_fileSize > 0) {
 		m_buildTree();
 		m_generateCodes();
@@ -94,7 +94,7 @@ void yac::Compressor::m_compress(EntryInfo & fileInfo, std::istream & in, std::o
 	}
 }
 
-void yac::Compressor::m_calculateFrequency(std::istream & in) {
+void yac::Compressor::m_calculateFrequencyAndFileSize(std::istream & in) {
 	m_fileSize = 0;
 	Byte c;
 
@@ -145,7 +145,7 @@ void yac::Compressor::m_visitNode(const TreeNode * node, BitCode & buffer) {
 	buffer.pop_back();
 }
 
-yac::HuffmanTreeSize yac::Compressor::m_writeHeader(EntryInfo & fileInfo, std::ostream & out) {
+yac::HuffmanTreeSize yac::Compressor::m_writeHeader(const EntryInfo & fileInfo, std::ostream & out) {
 	writeLittleEndian(out, static_cast<uint64_t>(fileInfo.sizeUncompressed.value));
 
 	// skip some place for the compressed size

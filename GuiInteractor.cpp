@@ -143,7 +143,7 @@ namespace yac
 	void GuiInteractor::onFireAddFiles(std::vector<EntryInfo*> files)
 	{
 		for (auto entry : files) {
-			m_compressor.compress(*entry, m_currentArchive);
+			m_compressor.addToArchive(*entry, m_currentArchive);
 		}
 		setFileTree(m_archFileModel->getCurrentEI());
 	}
