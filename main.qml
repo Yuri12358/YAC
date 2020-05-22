@@ -47,6 +47,7 @@ ApplicationWindow {
 		property string sizeUC: "invalid"
 
 		MenuItem {
+			id: infoMenuItem
 			text: qsTr("Info")
 			onTriggered: {
 				fileInfoDialog = Funcs.createWindow("qrc:/EntryInfoDialog.qml", rootWindow)
@@ -62,7 +63,7 @@ ApplicationWindow {
 	}
 
     FolderDialog {
-		id: extractToFolderFD
+		id: extractToFolderDialog
 		onAccepted: {
 			guiInteractor.fireExtractToFolder(folder)
 		}
@@ -111,24 +112,9 @@ ApplicationWindow {
                 Layout.preferredHeight: height
                 Layout.alignment: Qt.AlignCenter
                 onCheckedChanged: {
-                    extractToFolderFD.open()
+					extractToFolderDialog.open()
                 }
            }
-
-		   /*BasicButton {
-				id: settingsButton
-				enabled: anyArchiveOpened && !archivationActive
-                iconEnabled: "settings.svg"
-                iconDisabled: "settings_disabled.svg"
-                toolTipText: qsTr("archive settings")
-                Layout.leftMargin: Constants.ltMarginLR
-                Layout.rightMargin: Constants.ltMarginLR
-                Layout.topMargin: Constants.ltMarginUD
-                Layout.bottomMargin: Constants.ltMarginUD
-                Layout.preferredWidth: width
-                Layout.preferredHeight: height
-                Layout.alignment: Qt.AlignCenter
-		   }*/
 
             Item {
                 Layout.fillHeight: true
@@ -176,43 +162,9 @@ ApplicationWindow {
 		}
 
 		ColumnLayout {
-/*		ScrollView {
-			id: archivedFilesSV
-        //anchors.fill: parent
-			width: 100*/
-
-			RowLayout {
-				id: archProgress
-				visible: false
-				Layout.fillWidth: true
-				ProgressBar {
-					id: archPB
-					indeterminate: false
-					Layout.fillWidth: true
-					onVisibleChanged: {
-						if (addToArchiveDialog != null) {
-							addToArchiveDialog.archivationActive = visible
-						}
-					}
-				}
-
-				Connections {
-					target: guiInteractor
-					onSetProgress: {
-						if (progress < 0 || progress > 1) {
-							archProgress.visible = false
-						}
-						else {
-							if (!archProgress.visible) {
-								archProgress.visible = true
-							}
-							archPB.value = progress
-						}
-					}
-				}
-			}
 
 			EntryButton {
+				id: dotDotFolder
 				iconEnabled: "folder.svg"
 				iconDisabled: iconEnabled
 				centerHorizontal: false
@@ -228,7 +180,7 @@ ApplicationWindow {
 			}
 
 			ListView {
-				id: entryLV
+				id: entryList
 				Layout.fillWidth: true
 				Layout.fillHeight: true
 				model: fileModel
@@ -242,7 +194,7 @@ ApplicationWindow {
 					iconDisabled: iconEnabled
 					centerHorizontal: false
 					marginLeft: 3
-					width: entryLV.width
+					width: entryList.width
 					entryName: model.name
 					entryType: model.type
 					entrySizeC: model.sizeComp

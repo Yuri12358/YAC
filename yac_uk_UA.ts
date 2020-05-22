@@ -131,7 +131,7 @@
         <translation>Помилка: </translation>
     </message>
     <message>
-        <location filename="ErrorDialog.qml" line="26"/>
+        <location filename="ErrorDialog.qml" line="27"/>
         <source>Ok</source>
         <translation>Ок</translation>
     </message>
@@ -219,17 +219,17 @@
         <translation>YAC (Черговий стискувач)</translation>
     </message>
     <message>
-        <location filename="main.qml" line="83"/>
+        <location filename="main.qml" line="84"/>
         <source>Add</source>
         <translation>Додати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="105"/>
+        <location filename="main.qml" line="106"/>
         <source>Extract</source>
         <translation>Розпакувати</translation>
     </message>
     <message>
-        <location filename="main.qml" line="160"/>
+        <location filename="main.qml" line="146"/>
         <source>About</source>
         <translation>Про проект</translation>
     </message>
@@ -238,7 +238,7 @@
         <translation type="vanished">Видалити</translation>
     </message>
     <message>
-        <location filename="main.qml" line="50"/>
+        <location filename="main.qml" line="51"/>
         <source>Info</source>
         <translation>Інфо</translation>
     </message>
@@ -259,7 +259,7 @@
         <translation type="vanished">Параметри архіву</translation>
     </message>
     <message>
-        <location filename="main.qml" line="141"/>
+        <location filename="main.qml" line="127"/>
         <source>YAC settings</source>
         <translation>Параметри програми</translation>
     </message>
@@ -279,9 +279,24 @@
 <context>
     <name>yac::GuiInteractor</name>
     <message>
-        <location filename="GuiInteractor.cpp" line="192"/>
+        <location filename="GuiInteractor.cpp" line="184"/>
+        <source>Failed to open the file: </source>
+        <translation>Не вдалося відкрити файл: </translation>
+    </message>
+    <message>
+        <location filename="GuiInteractor.cpp" line="201"/>
         <source>This file already exists: </source>
         <translation>Цей файл вже існує: </translation>
+    </message>
+    <message>
+        <location filename="GuiInteractor.cpp" line="218"/>
+        <source>No files to add.</source>
+        <translation>Нічого додавати.</translation>
+    </message>
+    <message>
+        <location filename="GuiInteractor.cpp" line="232"/>
+        <source>Failed to create the file: </source>
+        <translation>Не вдалося створити файл: </translation>
     </message>
 </context>
 </TS>
